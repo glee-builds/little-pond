@@ -160,31 +160,28 @@ async function open(address, ready) {
 
 // ---------- The checks ----------
 
-// Every game and how many levels it has. Add a game here when it is added
-// to GAMES in src/app.js.
-const GAMES = { 'how-many': 3 };
+// Every game in src/games/index.js is checked, played the way its file in
+// tests/plays/ says (see tests/plays/how-many.mjs for what one holds).
+// To check one game only:  node tests/screens.mjs --only=how-many
+const ONLY = process.argv.find((arg) => arg.startsWith('--only='))?.split('=')[1];
+const { NAMES } = await import('../src/games/index.js');
+const GAMES = {};
+for (const name of ONLY ? [ONLY] : NAMES) {
+  GAMES[name] = { levels: (await import(`../src/games/${name}.js`)).meta.levels, ...await import(`./plays/${name}.mjs`) };
+}
 
 const problems = [];
 let checked = 0;
 let serverIsOff = false;
 
-const drawn = (game) => `Boolean(document.querySelector('#game-${game} .choice'))`;
-/** Run code in the page with G as the game's area, and wait(ms). */
+const PAUSE = 1700; // a right answer is enjoyed for a moment before the next round
+/** Run code in the page with G as the game's area (G.round is the round on screen), and wait(ms). */
 const inGame = (game, code) => evaluate(`(async () => {
   const G = document.getElementById('game-${game}');
   const wait = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
   ${code}
 })()`);
-// Tap every duckling to count them, and give the answer cards time to wake up.
-const COUNT_THEM = `for (const duck of G.querySelectorAll('.duckling')) duck.click(); await wait(1100);`;
-// Count the ducklings, tap a wrong card (if `miss`), then the card with as many dots as there are ducklings.
-const playRound = (miss) => `
-  ${COUNT_THEM}
-  const count = String(G.querySelectorAll('.duckling').length);
-  const cards = [...G.querySelectorAll('.choice')];
-  ${miss ? `cards.find((card) => card.getAttribute('aria-label') !== count).click(); await wait();` : ''}
-  cards.find((card) => card.getAttribute('aria-label') === count).click();
-  await wait(1700);`;
+const drawn = (game) => `(() => { const G = document.getElementById('game-${game}'); return Boolean(G?.round) && (${GAMES[game].ready}); })()`;
 const setProgress = (changes) => evaluate(`(() => {
   const saved = JSON.parse(localStorage.getItem('little-pond.progress') || 'null') || { streak: 0, totalDays: 0, lastDay: null, finished: {}, plays: {} };
   localStorage.setItem('little-pond.progress', JSON.stringify({ ...saved, ...${JSON.stringify(changes)} }));
@@ -214,47 +211,50 @@ try {
   await evaluate('localStorage.clear()');
   await checkScreen('Home', '', { ready: 'document.querySelectorAll("#today-list a").length > 0 && document.querySelectorAll("#pond .pad").length === 7' });
 
-  for (const [game, levels] of Object.entries(GAMES)) {
-    // Half-done: play 2 rounds, load the page again, and it picks up at round 3.
-    await checkScreen(`${game} (left halfway, then loaded again)`, `#${game}`, {
+  for (const [game, { levels, right, wrong, extra, setup }] of Object.entries(GAMES)) {
+    const answer = `{ ${right} } await wait(${PAUSE});`;
+    const miss = wrong ? `{ ${wrong} } await wait();` : '';
+    await evaluate('localStorage.clear()');
+    // A plays file may export `setup`: JavaScript run in the page before its game is
+    // first opened (the sound games use it to put letter sounds on the "phone").
+    if (setup) await evaluate(`(async () => { ${setup} })()`);
+    // Half-done: play 2 rounds (with one miss), load the page again, and it picks up at round 3.
+    await checkScreen(`${game} (left halfway, then loaded again, then finished)`, `#${game}`, {
       ready: drawn(game),
       fits: true,
       then: async () => {
-        await inGame(game, `${playRound(true)} { ${playRound(false)} }`);
+        await inGame(game, `${miss} ${answer} ${answer}`);
         if (!await open(`#${game}`, drawn(game))) return 'did not draw after loading again';
         if (await evaluate(`document.getElementById('game-${game}').dataset.resumed`) !== 'yes') return 'started over instead of picking up';
         if (await evaluate(`document.querySelectorAll('#game-${game} .dot-done').length`) !== 2) return 'picked up, but not where it left off';
-        // Finish it: the end card shows, with a gift, and the day is saved as "ok" (one miss).
-        await inGame(game, `{ ${playRound(false)} } { ${playRound(false)} }`);
+        // Finish it: the end card shows, with a gift, and the day is saved ("ok" after one miss).
+        await inGame(game, `while (G.round && !G.classList.contains('finished')) { const before = G.round; ${answer} if (G.round === before) break; }`);
+        await sleep(300);
         const end = await evaluate(`(() => {
           const progress = JSON.parse(localStorage.getItem('little-pond.progress'));
           return { card: !document.getElementById('done').hidden, gift: !document.getElementById('gift').hidden,
-            score: progress.results['${game}']?.[0]?.score, days: progress.totalDays };
+            score: progress.results?.['${game}']?.[0]?.score, days: progress.totalDays };
         })()`);
         if (!end.card || !end.gift) return 'finished, but the end card or its gift did not show';
-        if (end.score !== 'ok' || end.days !== 1) return `finished, but saved as ${end.score} on day ${end.days}`;
+        const score = wrong ? 'ok' : 'easy';
+        if (end.score !== score || end.days !== 1) return `finished, but saved as ${end.score} on day ${end.days}`;
         await evaluate(`document.getElementById('gift').click()`);
         await sleep(200);
-        if (await evaluate(`JSON.parse(localStorage.getItem('little-pond.progress')).stickers.length`) < 1) return 'the gift did not give a sticker';
-        return '';
+        return await evaluate(`JSON.parse(localStorage.getItem('little-pond.progress')).stickers.length`) === 1 ? '' : 'the gift did not give a sticker';
       },
     });
     // Three misses in a row: the answer is shown and the game moves on.
-    await setProgress({ finished: {} });
-    await checkScreen(`${game} (3 misses: the answer is shown)`, `#${game}`, {
-      ready: drawn(game),
-      then: async () => {
-        await inGame(game, `
-          ${COUNT_THEM}
-          const count = String(G.querySelectorAll('.duckling').length);
-          const wrong = [...G.querySelectorAll('.choice')].find((card) => card.getAttribute('aria-label') !== count);
-          for (let i = 0; i < 3; i++) { wrong.click(); await wait(); }
-          if (!G.querySelector('.choice-right')) throw new Error('the right card was not marked');
-          await wait(1700);`);
-        return await evaluate(`document.querySelectorAll('#game-${game} .dot-done').length`) === 1 ? '' : 'did not move on after the answer was shown';
-      },
-    });
-    // Every level fits the screen, and the cards wait until every duckling is counted.
+    if (wrong) {
+      await setProgress({ finished: {} });
+      await checkScreen(`${game} (3 misses: the answer is shown)`, `#${game}`, {
+        ready: drawn(game),
+        then: async () => {
+          await inGame(game, `${miss} ${miss} ${miss} await wait(${PAUSE});`);
+          return await evaluate(`document.querySelectorAll('#game-${game} .dot-done').length`) === 1 ? '' : 'did not move on after the third miss';
+        },
+      });
+    }
+    // Every level draws and fits the screen.
     for (let level = 1; level <= levels; level++) {
       await setProgress({ finished: {}, levels: { [game]: { now: level, was: level, since: null } } });
       await evaluate(`localStorage.removeItem('little-pond.half-done')`);
@@ -262,20 +262,17 @@ try {
         ready: drawn(game),
         fits: true,
         then: async () => {
-          const waiting = () => evaluate(`Boolean(document.querySelector('#game-${game} .choices-waiting'))`);
-          if (!await waiting()) return 'the cards can be tapped before the ducklings are counted';
-          await inGame(game, COUNT_THEM);
-          const [ducks, badges] = await evaluate(`[document.querySelectorAll('#game-${game} .duckling').length, document.querySelectorAll('#game-${game} .count-badge').length]`);
-          if (ducks !== badges) return `tapping to count marked ${badges} of ${ducks}`;
-          return await waiting() ? 'the cards did not wake up after counting' : '';
+          if (await evaluate(`document.getElementById('game-${game}').round && true`) !== true) return 'no round on screen';
+          return extra ? inGame(game, extra) : '';
         },
       });
     }
     await checkScreen(`${game} (an earlier day)`, `?day=2026-11-12#${game}`, { ready: drawn(game), fits: true });
   }
+  if (ONLY) throw new Error('only one game was asked for');
 
   await checkScreen('Sticker book', '#stickers', { ready: 'document.querySelectorAll(".sb-cover").length === 32' });
-  await checkScreen('Grown-up page', '#grown-ups', { ready: 'document.querySelectorAll(".gu-day").length === 28 && document.querySelectorAll(".gu-game").length > 0' });
+  await checkScreen('Grown-up page', '#grown-ups', { ready: 'document.querySelectorAll(".gu-day").length === 28 && document.querySelectorAll(".gu-game").length > 0 && document.querySelectorAll(".rec-letter").length === 26' });
 
   // The grown-up page opens only when its button is held for 2 seconds.
   await checkScreen('Grown-up button (a tap does nothing, a 2 second hold opens it)', '', {
@@ -327,8 +324,11 @@ try {
   serverIsOff = true;
   await setProgress({ finished: {} });
   await checkScreen('Home (offline)', '', { ready: 'document.querySelectorAll("#today-list a").length > 0' });
+  await evaluate(`localStorage.removeItem('little-pond.half-done')`);
   for (const game of Object.keys(GAMES)) await checkScreen(`${game} (offline)`, `#${game}`, { ready: drawn(game) });
   await checkScreen('Sticker book (offline)', '#stickers', { ready: 'document.querySelectorAll(".sb-cover").length === 32' });
+} catch (error) {
+  if (!ONLY) throw error; // with --only, the checks stop after that game
 } finally {
   socket.close();
   chrome.kill();

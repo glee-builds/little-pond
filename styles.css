@@ -1,6 +1,9 @@
 /* Colors live here as variables so every screen uses the same palette.
-   They match Lily Pad, this app's older sibling. */
+   They match Lily Pad's light colors. Little Pond is always light: it does
+   not follow the phone's dark mode. */
 :root {
+  color-scheme: light;
+
   --bg: #fff7ec;
   --text: #2b2440;
   --muted: #6b6280;
@@ -10,35 +13,18 @@
   --here: #1f9e89;       /* teal: right, done (always with a check mark) */
   --here-ink: #12705f;   /* darker teal, for text on white */
   --go: #ff8a5c;         /* orange: the thing to press next */
-  --on-go: #2b2440;      /* text on orange: dark in both modes (white is too faint) */
+  --on-go: #2b2440;      /* text on orange: dark (white is too faint) */
   --star: #ffb627;
   --words: #7461de;      /* purple: the Sounds group, and links */
   --words-ink: #5644c4;  /* darker, for text on white */
   --numbers: #ff8a5c;    /* orange: the Numbers group */
-  --numbers-ink: #b8481a;
+  --numbers-ink: #b8481a; /* darker, for text on white */
   --water: #cdeef5;      /* the pond */
   --pad: #4cb062;        /* a lily pad */
   --pad-edge: #3a9a55;
-  --bank: #d9c7a3;
-
-  /* Colors that are the same in light and dark mode. */
+  --bank: #d9c7a3;       /* the bank of the pond, and a log */
   --white: #ffffff;      /* text and marks on a strong color */
   --blush: #ff9aa2;      /* the pink flower on a lily pad */
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1d1a2b;
-    --text: #f6f1ff;
-    --muted: #b7aecb;
-    --surface: #2c2840;
-    --border: #463f60;
-    --here-ink: #5fd6bd;
-    --words-ink: #b4a8ff;
-    --numbers-ink: #ffa47f;
-    --water: #22405a;
-    --bank: #6b5b45;
-  }
 }
 
 * {
@@ -462,7 +448,6 @@ button {
 /* Played days: teal, and a count with a check, so it's not color alone. */
 .gu-day-played {
   border-color: var(--here);
-  background: color-mix(in srgb, var(--here) 18%, var(--surface));
 }
 
 .gu-today {
@@ -714,8 +699,8 @@ button {
   margin: 0 0 14px;
   padding: 10px 12px 14px;
   border-radius: 18px;
-  background: color-mix(in srgb, var(--page) 20%, var(--surface));
-  border: 2px solid color-mix(in srgb, var(--page) 45%, var(--surface));
+  background: var(--surface);
+  border: 2px solid var(--page);
 }
 
 .sb-album-0 { --page: var(--pad); }
@@ -742,8 +727,8 @@ button {
   min-height: 48px;
   padding: 10px 6px 12px;
   border-radius: 18px;
-  background: color-mix(in srgb, var(--page) 20%, var(--surface));
-  border: 2px solid color-mix(in srgb, var(--page) 45%, var(--surface));
+  background: var(--surface);
+  border: 2px solid var(--page);
   color: var(--text);
   font: inherit;
   cursor: pointer;
@@ -768,7 +753,6 @@ button {
 /* The page with the newest sticker: a gold ring. */
 .sb-cover-new {
   border-color: var(--star);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--star) 45%, transparent);
 }
 
 .sb-back {
@@ -837,11 +821,7 @@ button {
   filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.3));
 }
 
-/* The newest sticker wiggles once and sits on a gold glow. */
-.sb-new {
-  border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--star) 55%, transparent) 0 45%, transparent 70%);
-}
+/* The newest sticker wiggles once (and sits on a gold glow: see "Soft colors" below). */
 
 .sb-new .sticker-art { animation: sticker-new 900ms ease-out; }
 
@@ -853,6 +833,34 @@ button {
 
 @media (prefers-reduced-motion: reduce) {
   .sb-new .sticker-art { animation: none; }
+}
+
+/* ---------- Soft colors ---------- */
+
+/* color-mix() blends two colors. Older iPads (before Safari 16.2) don't have
+   it, and they show the plain colors set above instead. A rule that used
+   color-mix() and a variable together would lose its color there altogether,
+   so the soft colors are kept apart, in here. */
+@supports (color: color-mix(in srgb, red, blue)) {
+  .gu-day-played {
+    background: color-mix(in srgb, var(--here) 18%, var(--surface));
+  }
+
+  .sb-album,
+  .sb-cover {
+    background: color-mix(in srgb, var(--page) 20%, var(--surface));
+    border-color: color-mix(in srgb, var(--page) 45%, var(--surface));
+  }
+
+  .sb-cover-new {
+    border-color: var(--star);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--star) 45%, transparent);
+  }
+
+  .sb-new {
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--star) 55%, transparent) 0 45%, transparent 70%);
+  }
 }
 
 /* ---------- Today's set (home screen) ---------- */
@@ -1009,7 +1017,7 @@ button {
   color: var(--here-ink);
 }
 
-/* How Many's card: three ducklings in a row. */
+/* A row of ducklings on a game's card. */
 .art-ducks {
   display: flex;
   gap: 2px;
@@ -1082,7 +1090,7 @@ button {
   display: none;
 }
 
-/* ---------- A game's screen (src/scene.js) ---------- */
+/* ---------- A game's screen (playRounds in src/scene.js) ---------- */
 
 .scene {
   gap: 8px;
@@ -1197,6 +1205,26 @@ button {
   width: 100%;
 }
 
+/* Ducklings in rows of 5, filled from the left, so two amounts can be
+   compared by eye. --duck is how wide one duckling is. */
+.rows-of-5 {
+  display: grid;
+  grid-template-columns: repeat(5, var(--duck));
+  gap: 4px;
+  justify-content: center;
+  align-content: start;
+}
+
+.rows-of-5 .duckling {
+  width: auto;
+}
+
+/* A duckling that has gone away: still there to see, faded, but not to count. */
+.duckling.away {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
 /* The number a duckling gets when it's tapped to count. */
 .count-badge {
   position: absolute;
@@ -1213,10 +1241,10 @@ button {
   box-shadow: 0 0 0 2px var(--white);
 }
 
-/* The answer cards: dots, with the numeral beside them. */
+/* The answer cards (answerCards in src/scene.js), sharing the row. */
 .choices {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(var(--cards), 1fr);
   gap: 10px;
 }
 
@@ -1243,7 +1271,7 @@ button {
   box-shadow: 0 1px 0 var(--border);
 }
 
-/* Rows of 5, like the fingers of a hand. */
+/* A number's card: dots in rows of 5, like the fingers of a hand, with the numeral beside them. */
 .choice-dots {
   width: 80px; /* 5 dots and the gaps between them */
   display: flex;
@@ -1267,13 +1295,20 @@ button {
   line-height: 1;
 }
 
-/* The right answer: teal, with a check mark in its corner. */
-.choice-right {
+/* A word's card: its picture (an emoji). */
+.choice-picture {
+  font-size: 3.4rem;
+  line-height: 1;
+}
+
+/* The right answer (a card, a pad, a tile): teal, with a check mark in its corner. */
+.scene .right {
+  position: relative;
   border-color: var(--here);
   box-shadow: 0 4px 0 var(--here);
 }
 
-.choice-right::after {
+.scene .right::after {
   content: "✓";
   position: absolute;
   top: -10px;
@@ -1296,10 +1331,39 @@ button {
   font-size: 1.2rem;
 }
 
-/* The answer cards wait, faded, until every duckling has been counted. */
+/* Asleep: the answer cards wait, faded, until the player has counted or watched. */
 .choices-waiting {
   opacity: 0.3;
   pointer-events: none;
+}
+
+/* The big round button: the check mark ("I'm done, have a look"), or go. */
+.round-button {
+  flex: none;
+  align-self: center;
+  width: 80px;
+  height: 80px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 3px solid var(--here);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--here-ink);
+  font-size: 2.4rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--here);
+}
+
+.round-button:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--here);
+}
+
+.round-button:disabled {
+  opacity: 0.3;
 }
 
 /* A duckling still to be counted bobs a little, to say "tap me". */
@@ -1314,4 +1378,88 @@ button {
 
 @media (prefers-reduced-motion: reduce) {
   .to-count .duckling img { animation: none; }
+}
+
+/* ---------- Drag, or tap twice (draggable in src/scene.js) ---------- */
+
+/* Nothing in a game gets selected, and a long press on a picture doesn't open the phone's menu. */
+.scene {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* A finger on something that can be dragged moves it, and doesn't scroll the page. */
+.draggable {
+  cursor: grab;
+  touch-action: none;
+}
+
+/* The copy that follows the finger, just above the fingertip. */
+.drag-ghost {
+  position: fixed;
+  z-index: 50;
+  margin: 0;
+  transform: translate(-50%, -70%) scale(1.1);
+  filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.3));
+  pointer-events: none;
+}
+
+/* The thing itself while its copy is away. */
+.lifted {
+  opacity: 0.3;
+}
+
+/* Tapped, and waiting for a tap on where it goes: a gold ring. */
+.picked {
+  outline: 4px solid var(--star);
+  outline-offset: 2px;
+  border-radius: 16px;
+}
+
+/* The box a dragged thing would land in. */
+.drop-over {
+  box-shadow: 0 0 0 4px var(--star);
+}
+
+/* ---------- Ducklings to move onto lily pads (bank in src/scene.js) ---------- */
+
+.bank,
+.long-pad {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  gap: 4px;
+}
+
+/* The bank keeps its size as it empties, so the pads below don't jump. */
+.bank {
+  min-height: 72px;
+  padding: 8px;
+  border-radius: 20px;
+  background: var(--bank);
+}
+
+.bank-tall {
+  min-height: 132px;
+}
+
+/* A lily pad, long enough for a row of 5. */
+.long-pad {
+  position: relative;
+  min-height: 72px;
+  padding: 8px 6px;
+  border-radius: 36px;
+  background: var(--pad);
+  cursor: pointer;
+}
+
+/* Big enough to drag. */
+.bank .duckling,
+.long-pad .duckling.draggable {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  align-content: center;
 }

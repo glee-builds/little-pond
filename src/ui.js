@@ -1,4 +1,4 @@
-// ui.js: small screen helpers the app and its games share.
+// ui.js: small helpers the app and its games share.
 
 /** A new element, e.g. make('p', 'pond-caption', 'Hello'). */
 export function make(tag, className, text) {
@@ -41,3 +41,6 @@ export function progressDots(count) {
 
 /** "1 duckling", "3 ducklings". */
 export const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
+
+/** The whole numbers from `low` to `high`: range(2, 5) is [2, 3, 4, 5]. */
+export const range = (low, high) => Array.from({ length: high - low + 1 }, (_, i) => low + i);

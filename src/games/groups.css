@@ -1,0 +1,20 @@
+/* Groups (src/games/groups.js): ducklings on the bank, lily pads to put them on. */
+
+/* The pads, on the water. */
+.grp-pads {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 28px;
+  background: var(--water);
+}
+
+/* More than 5 on one pad (never a right answer): they squeeze up in one row, so the pad doesn't grow. */
+.grp-pads .long-pad:has(.duckling:nth-child(6)) {
+  flex-wrap: nowrap;
+}
+
+.grp-pads .long-pad:has(.duckling:nth-child(6)) .duckling + .duckling {
+  margin-left: -32px;
+}

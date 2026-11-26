@@ -1,0 +1,61 @@
+/* Patterns (src/games/patterns.js): a row of pond things with a gap at the end, and picture cards. */
+
+/* The pattern, on the water. --columns is set per round. */
+.pat-row {
+  display: grid;
+  grid-template-columns: repeat(var(--columns), minmax(0, 72px));
+  justify-content: center;
+  gap: 10px 8px;
+  padding: 16px 10px;
+  border-radius: 28px;
+  background: var(--water);
+}
+
+.pat-thing {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+
+.pat-thing svg,
+.pat-thing img,
+.pat-card svg,
+.pat-card img {
+  display: block;
+  width: 100%;
+}
+
+/* The gap: an empty outlined box, waiting for what comes next. */
+.pat-slot {
+  border: 3px dashed var(--text);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+/* Filled: a solid teal edge (the right card also gets its check mark). */
+.pat-filled {
+  border-style: solid;
+  border-color: var(--here);
+}
+
+.pat-hop {
+  width: 100%;
+  animation: pat-hop 0.4s ease-out;
+}
+
+@keyframes pat-hop {
+  0% { transform: translateY(40px) scale(0.6); }
+  60% { transform: translateY(-10px); }
+  100% { transform: none; }
+}
+
+.pat-card {
+  width: 76px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pat-hop { animation: none; }
+}

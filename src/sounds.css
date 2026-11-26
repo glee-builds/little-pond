@@ -1,0 +1,93 @@
+/* The "Record sounds" part of the grown-up page (recordSection in src/sounds.js). */
+
+.rec-about {
+  margin: 0 0 10px;
+  color: var(--muted);
+}
+
+.rec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+  gap: 6px;
+}
+
+.rec-letter {
+  position: relative;
+  min-height: 52px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Recorded: teal, with a check mark in the corner, so it's not color alone. */
+.rec-done {
+  border-color: var(--here);
+}
+
+/* A soft teal inside, where the browser can mix colors (see "Soft colors" in styles.css). */
+@supports (color: color-mix(in srgb, red, blue)) {
+  .rec-done {
+    background: color-mix(in srgb, var(--here) 18%, var(--surface));
+  }
+}
+
+.rec-done::after {
+  content: "✓";
+  position: absolute;
+  top: 0;
+  right: 4px;
+  color: var(--here-ink);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+/* The tile whose recorder is open. */
+.rec-letter[aria-pressed="true"] {
+  box-shadow: 0 0 0 3px var(--text);
+}
+
+.rec-panel {
+  margin-top: 12px;
+  padding: 12px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.rec-title {
+  margin: 0 0 10px;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.rec-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.rec-buttons .plain-button {
+  padding: 0 16px;
+}
+
+.rec-record {
+  border-color: var(--numbers-ink);
+  color: var(--numbers-ink);
+}
+
+/* While recording: filled in, and the button says "■ Stop". */
+.rec-recording {
+  background: var(--numbers-ink);
+  color: var(--surface);
+}
+
+.rec-status {
+  min-height: 1.5em;
+  margin: 10px 0 0;
+  color: var(--muted);
+}

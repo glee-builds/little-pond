@@ -1,0 +1,55 @@
+/* Shapes (src/games/shapes.js): flat shapes floating on the pond. */
+
+/* The pond the shapes float on. */
+.shp-pond {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 22px 8px;
+  border-radius: 28px;
+  background: var(--water);
+}
+
+/* One shape. The whole square is the tap area, however small the shape in it. */
+.shp-tile {
+  position: relative;
+  width: 30%;
+  min-width: 64px;
+  max-width: 120px;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 3px solid transparent;
+  border-radius: 20px;
+  background: none;
+  cursor: pointer;
+}
+
+/* 4 shapes sit 2 and 2, not 3 and 1. */
+.shp-pond-4 .shp-tile {
+  width: 38%;
+}
+
+.shp-tile svg {
+  display: block;
+  width: 100%;
+  animation: shp-float 3s ease-in-out infinite;
+}
+
+.shp-tile:nth-child(even) svg {
+  animation-delay: -1.5s;
+}
+
+.shp-tile:active {
+  transform: scale(0.95);
+}
+
+@keyframes shp-float {
+  0%, 100% { transform: translateY(-3px); }
+  50% { transform: translateY(3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shp-tile svg { animation: none; }
+}

@@ -7,15 +7,19 @@
 // many there are.
 
 import { createRandom } from '../seed.js';
-import { make, plural } from '../ui.js';
-import { duckling, dotCard, tapToCount, playRounds } from '../scene.js';
+import { make, plural, range } from '../ui.js';
+import { ducklings, tapToCount, dotCards, nearChoices, playRounds } from '../scene.js';
 import { speak } from '../voice.js';
+
+export const meta = {
+  title: 'How Many', kind: 'numbers', levels: 3,
+  art: '<span class="art-ducks"><img src="assets/duck.svg" alt=""><img src="assets/duck.svg" alt=""><img src="assets/duck.svg" alt=""></span>',
+};
 
 export const ROUNDS = 4;
 // The fewest and most ducklings at each level.
 const RANGES = [[1, 3], [1, 5], [4, 10]];
 
-const range = (low, high) => Array.from({ length: high - low + 1 }, (_, i) => low + i);
 
 /** The day's rounds: each is { count, choices }, with 3 choices close together. */
 export function generate(seed, level = 1) {
@@ -25,8 +29,7 @@ export function generate(seed, level = 1) {
   for (let i = 0; i < ROUNDS; i++) {
     // Never the same number twice in a row.
     const count = random.pick(range(low, high).filter((n) => n !== rounds.at(-1)?.count));
-    const near = range(Math.max(1, count - 2), Math.min(high, count + 2)).filter((n) => n !== count);
-    rounds.push({ count, choices: random.shuffle([count, ...random.shuffle(near).slice(0, 2)]) });
+    rounds.push({ count, choices: nearChoices(random, count, 1, high) });
   }
   return { level, rounds };
 }
@@ -39,11 +42,12 @@ export function verify(puzzle) {
   const [low, high] = RANGES[puzzle.level - 1] ?? [];
   if (puzzle.rounds.length !== ROUNDS) problems.push(`${puzzle.rounds.length} rounds, not ${ROUNDS}`);
   puzzle.rounds.forEach(({ count, choices }, i) => {
-    if (!(count >= low && count <= high)) problems.push(`round ${i + 1}: ${count} is outside ${low} to ${high}`);
-    if (new Set(choices).size !== 3) problems.push(`round ${i + 1}: the choices are not 3 different numbers`);
-    if (choices.filter((choice) => choice === count).length !== 1) problems.push(`round ${i + 1}: not exactly one right choice`);
-    if (choices.some((choice) => choice < 1 || choice > high)) problems.push(`round ${i + 1}: a choice is outside 1 to ${high}`);
-    if (i > 0 && count === puzzle.rounds[i - 1].count) problems.push(`round ${i + 1}: the same number as the round before`);
+    const say = (problem) => problems.push(`round ${i + 1}: ${problem}`);
+    if (!(count >= low && count <= high)) say(`${count} is outside ${low} to ${high}`);
+    if (new Set(choices).size !== 3) say('the choices are not 3 different numbers');
+    if (choices.filter((choice) => choice === count).length !== 1) say('not exactly one right choice');
+    if (choices.some((choice) => choice < 1 || choice > high)) say(`a choice is outside 1 to ${high}`);
+    if (i > 0 && count === puzzle.rounds[i - 1].count) say('the same number as the round before');
   });
   return { ok: problems.length === 0, problems };
 }
@@ -60,18 +64,18 @@ export function render(container, puzzle, onDone, session) {
     draw(stage, round, answer) {
       counted = false;
       const pad = make('div', `big-pad to-count${round.count > 5 ? ' big-pad-full' : ''}`);
-      const row = make('div', 'choices choices-waiting');
-      const cards = round.choices.map((count) => row.appendChild(dotCard(count, (card) => answer(count, card))));
-      tapToCount(Array.from({ length: round.count }, () => pad.appendChild(duckling())), () => {
+      const cards = dotCards(round.choices, answer);
+      cards.sleep();
+      tapToCount(ducklings(round.count, pad), () => {
         counted = true;
         setTimeout(() => {
-          row.classList.remove('choices-waiting');
+          cards.wake();
           speak(ASK_LINE);
         }, BEAT);
       });
-      stage.append(pad, row);
+      stage.append(pad, cards.node);
       return () => {
-        cards[round.choices.indexOf(round.count)].classList.add('choice-right');
+        cards.markRight(round.count);
         return plural(round.count, 'duckling');
       };
     },

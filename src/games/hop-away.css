@@ -1,0 +1,82 @@
+/* Hop Away (src/games/hop-away.js): ducklings on logs, and water for the ones that hop off. */
+
+/* The pond: logs with ducklings on them, and open water below for the ones that hop off. */
+.hop-pond {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 12px 10px;
+  border-radius: 28px;
+  background: var(--water);
+}
+
+/* A log holds up to 5 ducklings, and stays its size when they leave. */
+.hop-log {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  min-height: 66px; /* a duckling and the log under it */
+  border-bottom: 14px solid var(--bank);
+  border-radius: 0 0 14px 14px;
+}
+
+.hop-log .duckling {
+  width: 56px;
+}
+
+/* In the water: small (and faded: .away in styles.css). */
+.hop-water {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 2px;
+  min-height: 44px;
+}
+
+.hop-water .duckling {
+  width: 30px;
+  animation: hop-off 600ms ease-in backwards;
+}
+
+@keyframes hop-off {
+  0% { transform: translateY(-80px) scale(1.8); opacity: 1; }
+  40% { transform: translateY(-110px) scale(1.8); opacity: 1; }
+  100% { transform: none; opacity: 0.45; }
+}
+
+/* The go button sits over the sleeping answer cards until it is pressed. */
+.hop-answers {
+  position: relative;
+}
+
+.hop-go {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  border-color: var(--go);
+  background: var(--go);
+  color: var(--on-go);
+  box-shadow: 0 4px 0 var(--numbers-ink);
+  animation: hop-go 1.2s ease-in-out infinite;
+}
+
+.hop-go svg {
+  width: 52px;
+  fill: currentColor;
+}
+
+.hop-go:active {
+  box-shadow: 0 1px 0 var(--numbers-ink);
+}
+
+@keyframes hop-go {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hop-water .duckling,
+  .hop-go {
+    animation: none;
+  }
+}

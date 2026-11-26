@@ -1,0 +1,85 @@
+/* Slide (src/games/slide.js): a word, a duckling on a track under it, and 3 pictures. */
+
+.sld-word,
+.sld-track {
+  --sld-duck: 64px;
+}
+
+/* The three letters sit over the duckling's three middle stops (a quarter,
+   a half, and three quarters of the way along the track). */
+.sld-word {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 0 calc(var(--sld-duck) / 2 + (100% - var(--sld-duck)) / 8);
+}
+
+.sld-letter {
+  min-height: 88px;
+  padding: 0;
+  border: 3px solid transparent;
+  border-radius: 16px;
+  background: none;
+  color: var(--text);
+  font-size: 4rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* The letter being said: a gold box that lifts a little (not color alone). */
+.sld-lit {
+  border-color: var(--star);
+  background: var(--surface);
+  transform: translateY(-6px);
+}
+
+/* A soft gold inside the box, where the browser can mix colors (see "Soft colors" in styles.css). */
+@supports (color: color-mix(in srgb, red, blue)) {
+  .sld-lit {
+    background: color-mix(in srgb, var(--star) 25%, var(--surface));
+  }
+}
+
+/* The track: a strip of water with a lily pad at the far end. */
+.sld-track {
+  position: relative;
+  height: 72px;
+  border-radius: 36px;
+  background: var(--water);
+}
+
+.sld-track::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 4px;
+  width: 56px;
+  height: 56px;
+  border: 3px solid var(--pad-edge);
+  border-radius: 50%;
+  background: var(--pad);
+}
+
+.sld-duck {
+  position: absolute;
+  z-index: 1;
+  top: 4px;
+  left: calc(var(--at, 0) * (100% - var(--sld-duck)));
+  width: var(--sld-duck);
+  height: var(--sld-duck);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: grab;
+  touch-action: none; /* sliding the duckling must not scroll the page */
+}
+
+.sld-duck img {
+  display: block;
+  width: 100%;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sld-lit { transform: none; }
+}

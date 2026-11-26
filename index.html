@@ -5,14 +5,107 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#fff7ec">
   <title>Little Pond</title>
-  <link rel="icon" href="assets/frog.svg" type="image/svg+xml">
+  <!-- Home-screen app: name, icon, and colors (see manifest.webmanifest). -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Little Pond">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main class="hello">
-    <img class="hello-frog" src="assets/frog.svg" alt="">
-    <h1>Little Pond</h1>
-    <p>The games are on their way.</p>
-  </main>
+  <!-- Splash: shown while the app starts. It fades out by itself (styles.css). -->
+  <div id="splash" class="splash" aria-hidden="true">
+    <img class="splash-duck" src="assets/duck.svg" alt="">
+    <p class="splash-name">Little Pond</p>
+  </div>
+  <script>
+    // The splash shows once each time the app is opened, not on every page
+    // load (switching to an earlier day's games loads the page again).
+    try {
+      if (sessionStorage.getItem('little-pond-opened')) document.getElementById('splash').remove();
+      else sessionStorage.setItem('little-pond-opened', '1');
+    } catch (error) { /* no storage (private browsing): the splash just shows each time */ }
+  </script>
+
+  <div class="app">
+
+    <!-- Home: the pond and today's games. Filled in by src/app.js. -->
+    <section id="home" class="view">
+      <header class="top home-top">
+        <h1 class="brand"><img class="brand-duck" src="assets/duck.svg" alt="">Little Pond</h1>
+        <!-- The pond: one lily pad per day played. -->
+        <div class="pond" id="pond" role="img"></div>
+        <p class="pond-caption" id="pond-caption"></p>
+        <a class="text-link" id="back-to-today" href="./" hidden>← Back to today's games</a>
+      </header>
+
+      <!-- Shown only when the phone has no voice to read the instructions aloud. -->
+      <p class="no-voice" id="no-voice" hidden>This phone can't read aloud, so the games will be silent. A grown-up can read the line at the top of each game.</p>
+
+      <!-- Today's set: the games picked for today. -->
+      <section class="today" aria-labelledby="today-title">
+        <div class="today-head">
+          <h2 class="today-title" id="today-title">Today</h2>
+          <p class="today-count" id="today-count"></p>
+        </div>
+        <nav class="cards" id="today-list" aria-label="Today's games"></nav>
+        <!-- The last 7 days: tap one to play that day's games. -->
+        <p class="past-label">Play an earlier day:</p>
+        <nav class="past-days" id="past-days" aria-label="Earlier days"></nav>
+      </section>
+
+      <a class="text-link" id="sticker-link" href="#stickers"></a>
+
+      <!-- Every game, for free choice. Closed until tapped. -->
+      <details class="all-games">
+        <summary>All games</summary>
+        <div id="groups"></div>
+      </details>
+
+      <p class="grown-up-row">
+        <!-- Opens the grown-up page when held for 2 seconds. -->
+        <button class="quiet-button hold-button" type="button" id="grown-ups-hold">For grown-ups: press and hold</button>
+        <!-- Loads the app again: the newest version, and today's games. -->
+        <button class="quiet-button" type="button" id="refresh">↻ Refresh</button>
+      </p>
+    </section>
+
+    <!-- Each game's screen is added here by src/app.js, from its GAMES list. -->
+
+  </div>
+
+  <!-- The end-of-game card, shared by every game. -->
+  <section id="done" class="done" role="dialog" aria-labelledby="done-title" hidden>
+    <div class="done-card">
+      <img class="done-duck" src="assets/duck.svg" alt="">
+      <p class="done-title" id="done-title">You did it!</p>
+      <p class="done-hop" id="done-hop"></p>
+      <!-- The gift: tap to open it and get a sticker. -->
+      <button class="gift" type="button" id="gift" hidden>
+        <span class="gift-box" aria-hidden="true">🎁</span>
+        <span class="gift-label">Tap to open your gift!</span>
+      </button>
+      <p class="gift-sticker" id="gift-sticker" hidden></p>
+      <a class="button" href="#" id="done-next">Home</a>
+    </div>
+  </section>
+
+  <!-- Falling stars at the end of a game. -->
+  <div id="confetti" class="confetti" aria-hidden="true"></div>
+
+  <noscript>Little Pond needs JavaScript turned on.</noscript>
+  <p id="load-problem" class="load-problem" role="alert" hidden>
+    Little Pond didn't finish loading. Close it and open it again.
+  </p>
+  <script type="module" src="src/app.js"></script>
+  <script>
+    // If the app's code hasn't started after 5 seconds (for example, the
+    // phone kept an old copy of a file after an update), say so kindly.
+    setTimeout(function () {
+      if (!window.littlePondStarted) document.getElementById('load-problem').hidden = false;
+    }, 5000);
+  </script>
 </body>
 </html>

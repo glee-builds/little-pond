@@ -11,6 +11,11 @@ import { make, plural } from '../ui.js';
 import { duckling, dotCard, tapToCount, playRounds } from '../scene.js';
 import { speak } from '../voice.js';
 
+export const meta = {
+  title: 'How Many', kind: 'numbers', levels: 3,
+  art: '<span class="art-ducks"><img src="assets/duck.svg" alt=""><img src="assets/duck.svg" alt=""><img src="assets/duck.svg" alt=""></span>',
+};
+
 export const ROUNDS = 4;
 // The fewest and most ducklings at each level.
 const RANGES = [[1, 3], [1, 5], [4, 10]];

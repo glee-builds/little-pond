@@ -1315,3 +1315,38 @@ button {
 @media (prefers-reduced-motion: reduce) {
   .to-count .duckling img { animation: none; }
 }
+
+/* ---------- Drag, or tap twice (draggable in src/scene.js) ---------- */
+
+/* Things that can be dragged don't scroll the page or get selected. */
+.scene {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* The copy that follows the finger, just above the fingertip. */
+.drag-ghost {
+  position: fixed;
+  z-index: 50;
+  margin: 0;
+  transform: translate(-50%, -70%) scale(1.1);
+  filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.3));
+  pointer-events: none;
+}
+
+/* The thing itself while its copy is away. */
+.lifted {
+  opacity: 0.3;
+}
+
+/* Tapped, and waiting for a tap on where it goes: a gold ring. */
+.picked {
+  outline: 4px solid var(--star);
+  outline-offset: 2px;
+  border-radius: 16px;
+}
+
+/* The box a dragged thing would land in. */
+.drop-over {
+  box-shadow: 0 0 0 4px var(--star);
+}

@@ -10,6 +10,7 @@ import { pondPads } from './pond.js';
 import { make, button, plural } from './ui.js';
 import { PAGES, STICKERS, nextSticker } from './stickers.js';
 import { todaysSet } from './today.js';
+import { NAMES } from './games/index.js';
 import { speak, unlockVoice, voiceMissing } from './voice.js';
 
 const today = dateKey();
@@ -38,27 +39,28 @@ const GROUPS = [
   { kind: 'sounds', title: 'Sounds' },
 ];
 
-// Every game, by the name used in its address (#how-many), its file in
-// src/games/, and saved progress. Each has:
+// Every game, by name (src/games/index.js). Each game's file says what the
+// app needs to know about it in `meta`:
 //   title    its name, for a grown-up
 //   kind     which group it's in (see GROUPS)
 //   levels   how many levels it has
-//   art      the little picture on its card (styled in styles.css)
-// Adding a game: add its file in src/games/ and one entry here (and the
-// file to FILES in sw.js). Its card and its screen are built from the entry.
-const GAMES = {
-  'how-many': {
-    title: 'How Many', kind: 'numbers', levels: 3,
-    art: '<span class="art-ducks"><img src="assets/duck.svg" alt=""><img src="assets/duck.svg" alt=""><img src="assets/duck.svg" alt=""></span>',
-  },
-};
+//   art      the little picture on its card
+//   css      true if it has its own styles (src/games/<name>.css)
+// A game whose file can't be loaded is left out, with a warning.
+const GAMES = {};
+const loaded = await Promise.allSettled(NAMES.map((name) => import(`./games/${name}.js`)));
+loaded.forEach((result, i) => {
+  if (result.status === 'fulfilled') GAMES[NAMES[i]] = result.value;
+  else console.warn(`The game "${NAMES[i]}" could not be loaded.`, result.reason);
+});
+const meta = (name) => GAMES[name].meta;
 
 const isDone = (game) => progressStore.isFinished(progress, playDay, game);
-const gamesIn = (kind) => Object.keys(GAMES).filter((name) => GAMES[name].kind === kind);
+const gamesIn = (kind) => Object.keys(GAMES).filter((name) => meta(name).kind === kind);
 const todaysGames = () => todaysSet(Object.fromEntries(GROUPS.map(({ kind }) => [kind, gamesIn(kind)])), DAY);
 // A game's level goes up after 3 easy days in a row and down after 2 hard
 // ones (src/progress.js), starting the next day.
-const levelFor = (game) => Math.min(progressStore.levelOf(progress, game, playDay), GAMES[game].levels);
+const levelFor = (game) => Math.min(progressStore.levelOf(progress, game, playDay), meta(game).levels);
 
 // ---------- The home screen ----------
 
@@ -107,7 +109,7 @@ function drawPastDays() {
 
 /** A game's card: its picture, its name, and "Play" or "Done". `next` outlines the one to play now. */
 function makeCard(name, next) {
-  const { title, kind, art } = GAMES[name];
+  const { title, kind, art } = meta(name);
   const done = isDone(name);
   const card = make('a', `card kind-${kind}${done ? ' card-done' : ''}${name === next ? ' card-next' : ''}`);
   card.href = `#${name}`;
@@ -158,7 +160,7 @@ function finishGame(game, result) {
   // finished each day.
   const firstTime = !isDone(game);
   progress = progressStore.recordFinish(progress, playDay, game);
-  if (firstTime) progress = progressStore.recordResult(progress, playDay, game, result, { maxLevel: GAMES[game].levels });
+  if (firstTime) progress = progressStore.recordResult(progress, playDay, game, result, { maxLevel: meta(game).levels });
   progressStore.save(progress);
   justHopped = progress.totalDays > before;
   const hopped = justHopped;
@@ -350,8 +352,8 @@ function makeScreen(name, title, note) {
 
 // The screens that exist. Anything else in the address shows the home screen.
 const VIEWS = { '': document.getElementById('home') };
-for (const [name, { title }] of Object.entries(GAMES)) {
-  VIEWS[name] = makeScreen(name, title, playingPast ? `${capital(dayName(playDay))}'s game` : '');
+for (const name of Object.keys(GAMES)) {
+  VIEWS[name] = makeScreen(name, meta(name).title, playingPast ? `${capital(dayName(playDay))}'s game` : '');
 }
 VIEWS.stickers = makeScreen('stickers', 'My Stickers', 'Every game you finish has a gift.');
 VIEWS['grown-ups'] = makeScreen('grown-ups', 'For Grown-Ups', 'Everything here stays on this phone.');
@@ -384,12 +386,29 @@ function writeHalfDone(name, entry) {
 // a game halfway and coming back keeps the player's place.
 const started = new Set();
 
-/** Load a game's file, make the day's rounds, and draw them. */
+/** Add a game's own styles to the page, once, and wait until they're ready. */
+const styled = new Map();
+function loadStyles(name) {
+  if (!styled.has(name)) {
+    styled.set(name, new Promise((resolve, reject) => {
+      const link = make('link');
+      link.rel = 'stylesheet';
+      link.href = `src/games/${name}.css`;
+      link.onload = resolve;
+      link.onerror = () => reject(new Error(`Could not load ${link.href}`));
+      document.head.append(link);
+    }));
+  }
+  return styled.get(name);
+}
+
+/** Make the day's rounds for a game and draw them. */
 async function startGame(name) {
   const area = document.getElementById(`game-${name}`);
   area.replaceChildren(make('p', 'loading', 'Getting your game…'));
   try {
-    const game = await import(`./games/${name}.js`);
+    const game = GAMES[name];
+    if (game.meta.css) await loadStyles(name);
     const puzzle = game.generate(seedFor(playDay, name), levelFor(name));
     // A fingerprint of the rounds: a snapshot of different rounds (a new level) is ignored.
     const fingerprint = hashString(JSON.stringify(puzzle));
@@ -445,7 +464,7 @@ function drawGrownUps() {
   area.append(make('h2', 'gu-heading', 'Games played'));
   const list = make('ul', 'gu-games');
   const rows = Object.entries(GAMES)
-    .map(([name, { title, levels }]) => ({ name, title, levels, times: progress.plays[name] || 0 }))
+    .map(([name, { meta: { title, levels } }]) => ({ name, title, levels, times: progress.plays[name] || 0 }))
     .sort((a, b) => b.times - a.times || a.title.localeCompare(b.title));
   for (const { name, title, levels, times } of rows) {
     const trend = progressStore.trend(progress, name);

@@ -1,0 +1,98 @@
+/* Join (src/games/join.js): two lily pads that slide together into one. */
+
+.join-pond {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  border-radius: 28px;
+  background: var(--water);
+}
+
+.join-pad,
+.join-bank {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  gap: 4px;
+}
+
+/* A lily pad, long enough for a row of 5. */
+.join-pad {
+  position: relative;
+  min-height: 72px;
+  padding: 8px 6px;
+  border-radius: 36px;
+  background: var(--pad);
+  cursor: pointer;
+  touch-action: none; /* a slide pushes the pad; it doesn't scroll the page */
+  transition: margin-top 500ms ease-in-out, border-radius 500ms ease-in-out;
+}
+
+.join-pad + .join-pad {
+  margin-top: 32px;
+}
+
+/* Pushed together: the gap closes and the two pads become one. */
+.join-joined .join-pad {
+  border-radius: 36px 36px 0 0;
+  cursor: default;
+}
+
+.join-joined .join-pad + .join-pad {
+  margin-top: 0;
+  border-radius: 0 0 36px 36px;
+}
+
+.join-pad .duckling {
+  width: 64px;
+}
+
+/* More than 5 in all: smaller ducklings, in rows of 5. */
+.join-pond-full .duckling {
+  width: 54px;
+}
+
+/* A joined duckling still to be counted bobs a little, to say "tap me". */
+.join-joined .duckling:not(:has(.count-badge)) img {
+  animation: bob 1.2s ease-in-out infinite;
+}
+
+/* ----- Splitting: a group on the bank, two empty pads ----- */
+
+/* The bank keeps its size as it empties, so the pads don't jump. */
+.join-bank {
+  min-height: 132px;
+  padding: 8px;
+  border-radius: 20px;
+  background: var(--bank);
+}
+
+.join-pond-split .join-pad + .join-pad {
+  margin-top: 10px;
+}
+
+/* Big enough to drag, and a drag doesn't scroll the page. */
+.join-bank .duckling,
+.join-pond-split .duckling {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  align-content: center;
+  touch-action: none;
+}
+
+/* How many ended up on each pad: the numeral sits beside its ducklings. */
+.join-pad > .count-badge {
+  top: -8px;
+  right: 4px;
+  min-width: 34px;
+  height: 34px;
+  border-radius: 17px;
+  font-size: 1.3rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .join-pad { transition: none; }
+  .join-joined .duckling img { animation: none; }
+}

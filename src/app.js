@@ -12,6 +12,7 @@ import { PAGES, STICKERS, nextSticker } from './stickers.js';
 import { todaysSet } from './today.js';
 import { NAMES } from './games/index.js';
 import { speak, unlockVoice, voiceMissing } from './voice.js';
+import { recordSection } from './sounds.js';
 
 const today = dateKey();
 let progress = progressStore.load();
@@ -57,7 +58,22 @@ const meta = (name) => GAMES[name].meta;
 
 const isDone = (game) => progressStore.isFinished(progress, playDay, game);
 const gamesIn = (kind) => Object.keys(GAMES).filter((name) => meta(name).kind === kind);
-const todaysGames = () => todaysSet(Object.fromEntries(GROUPS.map(({ kind }) => [kind, gamesIn(kind)])), DAY);
+// Sound games need a grown-up's recordings (src/sounds.js). A game may
+// export async available(): until it says yes, the game stays out of
+// today's set and its card says what it's waiting for. Asked at the start,
+// and again whenever a recording is saved or deleted.
+const waiting = new Set();
+async function checkAvailable() {
+  await Promise.all(Object.entries(GAMES).map(async ([name, game]) => {
+    const ready = !game.available || await game.available().catch(() => false);
+    if (ready) waiting.delete(name);
+    else waiting.add(name);
+  }));
+}
+await checkAvailable();
+const playable = (name) => !waiting.has(name);
+const WAITING_LINE = 'Ask a grown-up to record the sounds';
+const todaysGames = () => todaysSet(Object.fromEntries(GROUPS.map(({ kind }) => [kind, gamesIn(kind).filter(playable)])), DAY);
 // A game's level goes up after 3 easy days in a row and down after 2 hard
 // ones (src/progress.js), starting the next day.
 const levelFor = (game) => Math.min(progressStore.levelOf(progress, game, playDay), meta(game).levels);
@@ -112,11 +128,11 @@ function makeCard(name, next) {
   const { title, kind, art } = meta(name);
   const done = isDone(name);
   const card = make('a', `card kind-${kind}${done ? ' card-done' : ''}${name === next ? ' card-next' : ''}`);
-  card.href = `#${name}`;
+  if (playable(name)) card.href = `#${name}`; // a game that's waiting for recordings doesn't open
   const picture = make('span', 'card-art');
   picture.setAttribute('aria-hidden', 'true');
   picture.innerHTML = art;
-  card.append(picture, make('span', 'card-name', title), make('span', 'card-status', done ? '✓ Done' : '▶ Play'));
+  card.append(picture, make('span', 'card-name', title), make('span', 'card-status', !playable(name) ? WAITING_LINE : done ? '✓ Done' : '▶ Play'));
   return card;
 }
 
@@ -406,10 +422,17 @@ function loadStyles(name) {
 async function startGame(name) {
   const area = document.getElementById(`game-${name}`);
   area.replaceChildren(make('p', 'loading', 'Getting your game…'));
+  if (!playable(name)) { // opened by its address while it waits for recordings
+    area.replaceChildren(make('p', 'loading', `${WAITING_LINE}.`));
+    started.delete(name); // so it starts once the sounds are recorded
+    return;
+  }
   try {
     const game = GAMES[name];
     if (game.meta.css) await loadStyles(name);
-    const puzzle = game.generate(seedFor(playDay, name), levelFor(name));
+    // A game may export async data(): a list of more things generate needs
+    // (the sound games' word list and recorded letters), so generate stays pure.
+    const puzzle = game.generate(seedFor(playDay, name), levelFor(name), ...(await game.data?.() ?? []));
     // A fingerprint of the rounds: a snapshot of different rounds (a new level) is ignored.
     const fingerprint = hashString(JSON.stringify(puzzle));
     const entry = readHalfDone().games[name];
@@ -480,12 +503,17 @@ function drawGrownUps() {
   }
   area.append(list);
 
+  // Record sounds: the letter sounds the sound games play (src/sounds.js).
+  // Its styles are src/sounds.css, one folder up from the games' styles.
+  loadStyles('../sounds').catch(console.error);
+  area.append(make('h2', 'gu-heading', 'Record sounds'), recordSection(checkAvailable));
+
   // Start over: asks first, since it can't be undone.
   const ask = make('div', 'gu-confirm');
   ask.hidden = true;
   const startOver = button('plain-button gu-start-over', 'Start over…', () => { ask.hidden = false; startOver.hidden = true; });
   ask.append(
-    make('p', '', 'This clears the lily pads, the stickers, and this page on this phone. It can\'t be undone.'),
+    make('p', '', 'This clears the lily pads, the stickers, and this page on this phone. It can\'t be undone. Recorded sounds are kept.'),
     button('plain-button', 'Cancel', () => { ask.hidden = true; startOver.hidden = false; }),
     button('plain-button gu-reset', 'Yes, start over', () => {
       progressStore.save(progressStore.emptyProgress());

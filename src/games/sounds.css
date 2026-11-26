@@ -1,0 +1,38 @@
+/* Sounds (src/games/sounds.js): a big duckling that says the sound, and 2 or 3 pictures. */
+
+/* Tap the duckling to hear the sound again. */
+.snd-hear {
+  position: relative;
+  align-self: center;
+  width: 140px;
+  height: 140px;
+  padding: 0;
+  border: 4px solid var(--words);
+  border-radius: 50%;
+  background: var(--surface);
+  font-size: 1.8rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 5px 0 var(--words);
+}
+
+.snd-hear:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 var(--words);
+}
+
+.snd-hear img {
+  display: block;
+  width: 84px;
+  margin: 0 auto -6px;
+}
+
+/* Level 1 has two pictures: they share the row. */
+.snd-two {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.snd-picture {
+  font-size: 3.4rem;
+  line-height: 1;
+}

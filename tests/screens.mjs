@@ -211,10 +211,13 @@ try {
   await evaluate('localStorage.clear()');
   await checkScreen('Home', '', { ready: 'document.querySelectorAll("#today-list a").length > 0 && document.querySelectorAll("#pond .pad").length === 7' });
 
-  for (const [game, { levels, right, wrong, extra }] of Object.entries(GAMES)) {
+  for (const [game, { levels, right, wrong, extra, setup }] of Object.entries(GAMES)) {
     const answer = `{ ${right} } await wait(${PAUSE});`;
     const miss = wrong ? `{ ${wrong} } await wait();` : '';
     await evaluate('localStorage.clear()');
+    // A plays file may export `setup`: JavaScript run in the page before its game is
+    // first opened (the sound games use it to put letter sounds on the "phone").
+    if (setup) await evaluate(`(async () => { ${setup} })()`);
     // Half-done: play 2 rounds (with one miss), load the page again, and it picks up at round 3.
     await checkScreen(`${game} (left halfway, then loaded again, then finished)`, `#${game}`, {
       ready: drawn(game),
@@ -269,7 +272,7 @@ try {
   if (ONLY) throw new Error('only one game was asked for');
 
   await checkScreen('Sticker book', '#stickers', { ready: 'document.querySelectorAll(".sb-cover").length === 32' });
-  await checkScreen('Grown-up page', '#grown-ups', { ready: 'document.querySelectorAll(".gu-day").length === 28 && document.querySelectorAll(".gu-game").length > 0' });
+  await checkScreen('Grown-up page', '#grown-ups', { ready: 'document.querySelectorAll(".gu-day").length === 28 && document.querySelectorAll(".gu-game").length > 0 && document.querySelectorAll(".rec-letter").length === 26' });
 
   // The grown-up page opens only when its button is held for 2 seconds.
   await checkScreen('Grown-up button (a tap does nothing, a 2 second hold opens it)', '', {

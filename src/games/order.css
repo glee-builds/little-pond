@@ -1,0 +1,79 @@
+/* Order (src/games/order.js): a log with a row of spots, and ducklings waiting below. */
+
+/* Both rows have one box per duckling, so every box is the same size. */
+.ord-log,
+.ord-tray {
+  position: relative;
+  align-self: center;
+  width: min(100%, var(--ord-count) * 108px);
+  display: grid;
+  grid-template-columns: repeat(var(--ord-count), 1fr);
+  gap: 4px;
+  padding: 6px;
+}
+
+.ord-log {
+  margin-bottom: 22px; /* room for the dots under it */
+  border-radius: 22px;
+  background: var(--bank);
+}
+
+.ord-slot,
+.ord-spot {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 16px;
+}
+
+.ord-slot {
+  border: 3px dashed var(--border);
+  background: var(--surface);
+}
+
+/* The dot under each spot: small where the smallest goes, big where the biggest goes. */
+.ord-slot::after {
+  content: "";
+  position: absolute;
+  top: calc(100% + 20px);
+  left: 50%;
+  width: var(--ord-mark);
+  height: var(--ord-mark);
+  border-radius: 50%;
+  background: var(--muted);
+  transform: translate(-50%, -50%);
+}
+
+/* A duckling fills its box, so even the smallest is easy to pick up; its picture is its size. */
+.ord-duck {
+  width: 100%;
+  aspect-ratio: 1;
+  display: grid;
+  align-items: end;
+  justify-items: center;
+  cursor: grab;
+  touch-action: none; /* a finger on it drags it, and doesn't scroll the page */
+}
+
+.ord-duck img {
+  width: var(--ord-width);
+}
+
+/* In order: the log turns teal, with a check mark. */
+.ord-done {
+  box-shadow: 0 0 0 4px var(--here);
+}
+
+.ord-done::after {
+  content: "✓";
+  position: absolute;
+  top: -12px;
+  right: -8px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--here);
+  color: var(--white);
+  font-weight: 800;
+}

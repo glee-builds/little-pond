@@ -1,0 +1,49 @@
+/* One More, One Less (src/games/one-more.js) */
+
+.om-pad {
+  position: relative;
+}
+
+/* The duckling that just hopped on: it drops in, and keeps a sparkle. */
+.om-new {
+  animation: om-on 600ms ease-out;
+}
+
+.om-new::before {
+  content: "✨";
+  position: absolute;
+  top: -10px;
+  left: -8px;
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+@keyframes om-on {
+  0% { transform: translateY(-120px); opacity: 0; }
+  60% { transform: translateY(6px); opacity: 1; }
+  100% { transform: none; }
+}
+
+/* The duckling that hopped away: in the water at the corner, small and faded, not to count. */
+.duckling.om-gone {
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  width: 38px;
+  opacity: 0.45;
+  pointer-events: none;
+  animation: om-off 600ms ease-in;
+}
+
+@keyframes om-off {
+  0% { transform: translate(-110px, -70px) scale(1.6); opacity: 1; }
+  40% { transform: translate(-60px, -110px) scale(1.6); opacity: 1; }
+  100% { transform: none; opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .om-new,
+  .duckling.om-gone {
+    animation: none;
+  }
+}

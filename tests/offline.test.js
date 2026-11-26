@@ -15,7 +15,8 @@ const listed = sw.slice(sw.indexOf('const FILES = ['), sw.indexOf('];', sw.index
 test('sw.js saves every file the app needs for offline', () => {
   const needed = [
     'index.html', 'styles.css', 'manifest.webmanifest',
-    ...['src/', 'data/', 'assets/'].flatMap((folder) =>
+    // data/ arrives with the sound games; Git doesn't keep an empty folder.
+    ...['src/', 'data/', 'assets/'].filter((folder) => existsSync(new URL(folder, root))).flatMap((folder) =>
       readdirSync(new URL(folder, root), { recursive: true })
         .map((name) => `${folder}${name}`)
         .filter((path) => /\.(js|json|css|html|svg|png|woff2)$/.test(path))),

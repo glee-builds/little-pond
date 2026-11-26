@@ -116,7 +116,7 @@ export function render(container, puzzle, onDone, session) {
       });
       stage.append(pond);
       return () => {
-        tiles[round.tiles.findIndex((tile) => tile.shape === round.ask)].classList.add('choice-right');
+        tiles[round.tiles.findIndex((tile) => tile.shape === round.ask)].classList.add('right');
         return `The ${round.ask}`;
       };
     },

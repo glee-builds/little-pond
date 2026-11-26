@@ -26,7 +26,13 @@
 /* Recorded: teal, with a check mark in the corner, so it's not color alone. */
 .rec-done {
   border-color: var(--here);
-  background: color-mix(in srgb, var(--here) 18%, var(--surface));
+}
+
+/* A soft teal inside, where the browser can mix colors (see "Soft colors" in styles.css). */
+@supports (color: color-mix(in srgb, red, blue)) {
+  .rec-done {
+    background: color-mix(in srgb, var(--here) 18%, var(--surface));
+  }
 }
 
 .rec-done::after {

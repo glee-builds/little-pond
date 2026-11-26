@@ -18,6 +18,6 @@ export const extra = `
   ${hop}
   if (G.querySelector('.choices-waiting')) return 'the cards did not wake up after the hop';
   if (G.querySelectorAll('.hop-log .duckling').length !== start - away) return 'the wrong number stayed on the log';
-  if (G.querySelectorAll('.hop-water .duckling').length !== away) return 'the ducklings that hopped away are not in the water';
+  if (G.querySelectorAll('.hop-water .away').length !== away) return 'the ducklings that hopped away are not in the water';
   for (const duck of G.querySelectorAll('.duckling')) duck.click();
   return G.querySelectorAll('.count-badge').length === start - away ? '' : 'tapping did not count just the ducklings on the log';`;

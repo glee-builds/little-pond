@@ -1,15 +1,11 @@
-/* More or Fewer (src/games/more-or-fewer.js) */
+/* More or Fewer (src/games/more-or-fewer.js): two lily pads to compare, or to make the same. */
 
-/* A lily pad with its ducklings in rows of 5, filled from the left, so two
-   pads can be compared by eye. Always two rows tall, so nothing jumps. */
+/* A lily pad with its ducklings in rows of 5 (styles.css). Always two rows
+   tall, so nothing jumps. */
 .mof-pad {
+  --duck: 58px;
   position: relative;
-  display: grid;
-  grid-template-columns: repeat(5, 58px);
   grid-auto-rows: 54px;
-  gap: 4px;
-  justify-content: center;
-  align-content: start;
   height: 138px;
   padding: 10px;
   border: 3px solid var(--pad-edge);
@@ -26,10 +22,6 @@ button.mof-pad:active {
   transform: translateY(3px);
 }
 
-.mof-pad .duckling {
-  width: 58px;
-}
-
 /* A pad that is tapped as a whole: its ducklings don't take the tap. */
 button.mof-pad .duckling,
 .mof-pad:not(.mof-mine):not(button) .duckling {
@@ -42,15 +34,14 @@ button.mof-pad .duckling,
   border-color: var(--star);
 }
 
-/* The add button and the check button. */
+/* The add button, and the check button (styles.css) beside it. */
 .mof-tools {
   display: flex;
   justify-content: center;
   gap: 16px;
 }
 
-.mof-add,
-.mof-check {
+.mof-add {
   min-width: 120px;
   height: 72px;
   display: flex;
@@ -71,17 +62,7 @@ button.mof-pad .duckling,
   width: 50px;
 }
 
-.mof-check {
-  border-color: var(--here-ink);
-  background: var(--here);
-  color: var(--white);
-  font-size: 2.4rem;
-  font-weight: 800;
-  box-shadow: 0 4px 0 var(--here-ink);
-}
-
-.mof-add:active,
-.mof-check:active {
+.mof-add:active {
   transform: translateY(3px);
   box-shadow: none;
 }

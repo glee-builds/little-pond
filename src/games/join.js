@@ -10,8 +10,8 @@
 // the ducklings.
 
 import { createRandom } from '../seed.js';
-import { make } from '../ui.js';
-import { duckling, dotCard, tapToCount, draggable, playRounds } from '../scene.js';
+import { make, range } from '../ui.js';
+import { ducklings, tapToCount, dotCards, nearChoices, bank, playRounds } from '../scene.js';
 
 const duckAt = (x) => `<image href="assets/duck.svg" x="${x}" y="6" width="24" height="22"/>`;
 const padAt = (x) => `<ellipse cx="${x}" cy="34" rx="30" ry="14" style="fill:var(--pad)"/>`;
@@ -27,7 +27,6 @@ const TOTALS = [[2, 5], [6, 10]];
 const WHOLES = [5, 10];
 const SPLIT = 3;
 
-const range = (low, high) => Array.from({ length: high - low + 1 }, (_, i) => low + i);
 
 /**
  * The day's rounds. Levels 1 and 2: { a, b, choices }, two groups and 3
@@ -46,8 +45,7 @@ export function generate(seed, level = 1) {
     // Never the same number in all twice in a row.
     const total = random.pick(range(low, high).filter((n) => n !== last));
     const a = random.int(1, total - 1);
-    const near = range(Math.max(1, total - 2), Math.min(high, total + 2)).filter((n) => n !== total);
-    rounds.push({ a, b: total - a, choices: random.shuffle([total, ...random.shuffle(near).slice(0, 2)]) });
+    rounds.push({ a, b: total - a, choices: nearChoices(random, total, 1, high) });
     last = total;
   }
   return { level, rounds };
@@ -65,20 +63,21 @@ export function verify(puzzle) {
   const [low, high] = split ? WHOLES : TOTALS[puzzle.level - 1] ?? [];
   if (puzzle.rounds.length !== ROUNDS) problems.push(`${puzzle.rounds.length} rounds, not ${ROUNDS}`);
   puzzle.rounds.forEach((round, i) => {
+    const say = (problem) => problems.push(`round ${i + 1}: ${problem}`);
     const total = split ? round.whole : round.a + round.b;
     const before = puzzle.rounds[i - 1];
-    if (!(total >= low && total <= high)) problems.push(`round ${i + 1}: ${total} is outside ${low} to ${high}`);
+    if (!(total >= low && total <= high)) say(`${total} is outside ${low} to ${high}`);
     if (split) {
-      if (!check(round, [1, total - 1])) problems.push(`round ${i + 1}: a split into two groups is not accepted`);
-      if (puzzle.rounds.findIndex(({ whole }) => whole === total) !== i) problems.push(`round ${i + 1}: ${total} was already split today`);
+      if (!check(round, [1, total - 1])) say('a split into two groups is not accepted');
+      if (puzzle.rounds.findIndex(({ whole }) => whole === total) !== i) say(`${total} was already split today`);
       return;
     }
     const { a, b, choices = [] } = round;
-    if (!(a >= 1 && b >= 1)) problems.push(`round ${i + 1}: a pad is empty`);
-    if (new Set(choices).size !== 3) problems.push(`round ${i + 1}: the choices are not 3 different numbers`);
-    if (choices.filter((choice) => check(round, choice)).length !== 1) problems.push(`round ${i + 1}: not exactly one right choice`);
-    if (choices.some((choice) => choice < 1 || choice > high)) problems.push(`round ${i + 1}: a choice is outside 1 to ${high}`);
-    if (before && total === before.a + before.b) problems.push(`round ${i + 1}: the same number as the round before`);
+    if (!(a >= 1 && b >= 1)) say('a pad is empty');
+    if (new Set(choices).size !== 3) say('the choices are not 3 different numbers');
+    if (choices.filter((choice) => check(round, choice)).length !== 1) say('not exactly one right choice');
+    if (choices.some((choice) => choice < 1 || choice > high)) say(`a choice is outside 1 to ${high}`);
+    if (before && total === before.a + before.b) say('the same number as the round before');
   });
   return { ok: problems.length === 0, problems };
 }
@@ -94,54 +93,41 @@ const makes = (a, b) => `${a} and ${b} make ${a + b}`;
 function drawJoin(stage, round, answer) {
   const total = round.a + round.b;
   const pond = make('div', `join-pond${total > 5 ? ' join-pond-full' : ''}`);
-  const row = make('div', 'choices choices-waiting');
-  const cards = round.choices.map((count) => row.appendChild(dotCard(count, (card) => answer(count, card))));
+  const cards = dotCards(round.choices, answer);
+  cards.sleep();
   function join() {
     if (pond.classList.contains('join-joined')) return;
-    pond.classList.add('join-joined');
+    pond.classList.add('join-joined', 'to-count');
     // After the slide, so the tap that pushed the pads doesn't also count a duckling.
     setTimeout(() => {
       tapToCount([...pond.querySelectorAll('.duckling')]);
-      row.classList.remove('choices-waiting');
+      cards.wake();
     }, BEAT);
   }
   for (const count of [round.a, round.b]) {
-    const pad = pond.appendChild(make('div', 'join-pad'));
-    for (let i = 0; i < count; i++) pad.append(duckling());
+    const pad = pond.appendChild(make('div', 'long-pad'));
+    ducklings(count, pad);
     // A slide ends in pointerup, a tap (or a key press) in click: either pushes.
     pad.addEventListener('pointerup', join);
     pad.addEventListener('click', join);
   }
-  stage.append(pond, row);
+  stage.append(pond, cards.node);
   return () => {
-    cards[round.choices.indexOf(total)].classList.add('choice-right');
+    cards.markRight(total);
     return makes(round.a, round.b);
   };
 }
 
 /** One group on the bank and two empty pads; checked as soon as the bank is empty. */
 function drawSplit(stage, round, answer) {
-  let over = false;
-  const bank = make('div', 'join-bank');
   const pond = make('div', 'join-pond join-pond-split');
-  const pads = [0, 1].map(() => pond.appendChild(make('div', 'join-pad')));
+  const pads = [0, 1].map(() => pond.appendChild(make('div', 'long-pad')));
   const counts = () => pads.map((pad) => pad.querySelectorAll('.duckling').length);
-  const ducks = Array.from({ length: round.whole }, () => {
-    const duck = bank.appendChild(duckling());
-    draggable(duck, {
-      targets: () => pads,
-      canMove: () => !over,
-      onDrop(i) {
-        pads[i].append(duck);
-        if (!bank.children.length) answer(counts(), pond);
-      },
-    });
-    return duck;
-  });
-  stage.append(bank, pond);
+  const waiting = bank(round.whole, pads, () => waiting.isEmpty() && answer(counts(), pond));
+  stage.append(waiting.node, pond);
   return () => {
-    over = true;
-    if (!check(round, counts())) ducks.forEach((duck, i) => pads[i % 2].append(duck));
+    waiting.close();
+    if (!check(round, counts())) waiting.share();
     const [a, b] = counts();
     pads.forEach((pad, i) => pad.append(make('span', 'count-badge', String([a, b][i]))));
     return makes(a, b);

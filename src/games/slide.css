@@ -29,8 +29,15 @@
 /* The letter being said: a gold box that lifts a little (not color alone). */
 .sld-lit {
   border-color: var(--star);
-  background: color-mix(in srgb, var(--star) 25%, var(--surface));
+  background: var(--surface);
   transform: translateY(-6px);
+}
+
+/* A soft gold inside the box, where the browser can mix colors (see "Soft colors" in styles.css). */
+@supports (color: color-mix(in srgb, red, blue)) {
+  .sld-lit {
+    background: color-mix(in srgb, var(--star) 25%, var(--surface));
+  }
 }
 
 /* The track: a strip of water with a lily pad at the far end. */
@@ -71,11 +78,6 @@
   display: block;
   width: 100%;
   pointer-events: none;
-}
-
-.sld-picture {
-  font-size: 3.4rem;
-  line-height: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {

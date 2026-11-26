@@ -8,8 +8,8 @@
 // It builds equal groups, the start of multiplying and dividing.
 
 import { createRandom } from '../seed.js';
-import { make, button, plural } from '../ui.js';
-import { duckling, draggable, playRounds } from '../scene.js';
+import { make, plural } from '../ui.js';
+import { bank, checkButton, playRounds } from '../scene.js';
 
 const duckAt = (x) => `<image href="assets/duck.svg" x="${x}" y="6" width="24" height="22"/>`;
 const padAt = (x) => `<ellipse cx="${x}" cy="34" rx="28" ry="14" style="fill:var(--pad)"/>`;
@@ -52,11 +52,12 @@ export function verify(puzzle) {
   const shapes = LEVELS[puzzle.level - 1] ?? [];
   if (puzzle.rounds.length !== ROUNDS) problems.push(`${puzzle.rounds.length} rounds, not ${ROUNDS}`);
   puzzle.rounds.forEach((round, i) => {
-    if (!shapes.some((shape) => same(round, shape))) problems.push(`round ${i + 1}: ${round.pads} pads of ${round.each} is not a level ${puzzle.level} round`);
-    if (round.pads * round.each > 10) problems.push(`round ${i + 1}: more than 10 ducklings`);
-    if (round.fair !== (puzzle.level >= FAIR)) problems.push(`round ${i + 1}: asks the wrong way for level ${puzzle.level}`);
-    if (!check(round, Array(round.pads).fill(round.each))) problems.push(`round ${i + 1}: equal groups are not accepted`);
-    if (i > 0 && same(puzzle.rounds[i - 1], [round.pads, round.each])) problems.push(`round ${i + 1}: the same as the round before`);
+    const say = (problem) => problems.push(`round ${i + 1}: ${problem}`);
+    if (!shapes.some((shape) => same(round, shape))) say(`${round.pads} pads of ${round.each} is not a level ${puzzle.level} round`);
+    if (round.pads * round.each > 10) say('more than 10 ducklings');
+    if (round.fair !== (puzzle.level >= FAIR)) say(`asks the wrong way for level ${puzzle.level}`);
+    if (!check(round, Array(round.pads).fill(round.each))) say('equal groups are not accepted');
+    if (i > 0 && same(puzzle.rounds[i - 1], [round.pads, round.each])) say('the same as the round before');
   });
   return { ok: problems.length === 0, problems };
 }
@@ -68,32 +69,17 @@ export function render(container, puzzle, onDone, session) {
     prompt,
     check,
     draw(stage, round, answer) {
-      let over = false;
-      const total = round.pads * round.each;
-      const bank = make('div', `grp-bank${total > 5 ? ' grp-bank-tall' : ''}`);
       const row = make('div', 'grp-pads');
-      const pads = Array.from({ length: round.pads }, () => row.appendChild(make('div', 'grp-pad')));
+      const pads = Array.from({ length: round.pads }, () => row.appendChild(make('div', 'long-pad')));
       // Asleep until the bank is empty, so a half-done round is never a miss.
-      const done = button('grp-done', '✓', () => answer(pads.map((pad) => pad.children.length), row));
-      done.setAttribute('aria-label', 'Done');
+      const done = checkButton(() => answer(pads.map((pad) => pad.children.length), row));
       done.disabled = true;
-      const ducks = Array.from({ length: total }, () => {
-        const duck = bank.appendChild(duckling());
-        draggable(duck, {
-          targets: () => pads,
-          canMove: () => !over,
-          onDrop(i) {
-            pads[i].append(duck);
-            done.disabled = bank.children.length > 0;
-          },
-        });
-        return duck;
-      });
-      stage.append(bank, row, done);
+      const waiting = bank(round.pads * round.each, pads, () => { done.disabled = !waiting.isEmpty(); });
+      stage.append(waiting.node, row, done);
       return () => {
-        over = true;
-        ducks.forEach((duck, i) => pads[i % round.pads].append(duck));
-        row.classList.add('grp-right');
+        waiting.close();
+        waiting.share();
+        for (const pad of pads) pad.classList.add('right');
         return `${plural(round.each, 'duckling')} on each pad`;
       };
     },

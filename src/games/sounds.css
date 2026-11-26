@@ -1,4 +1,4 @@
-/* Sounds (src/games/sounds.js): a big duckling that says the sound, and 2 or 3 pictures. */
+/* Sounds (src/games/sounds.js): a big duckling that says the sound, above the picture cards. */
 
 /* Tap the duckling to hear the sound again. */
 .snd-hear {
@@ -25,14 +25,4 @@
   display: block;
   width: 84px;
   margin: 0 auto -6px;
-}
-
-/* Level 1 has two pictures: they share the row. */
-.snd-two {
-  grid-template-columns: repeat(2, 1fr);
-}
-
-.snd-picture {
-  font-size: 3.4rem;
-  line-height: 1;
 }

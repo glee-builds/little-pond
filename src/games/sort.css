@@ -41,8 +41,6 @@
   place-items: center;
   font-size: calc(var(--sort-size) * var(--sort-scale, 1) * 0.8);
   line-height: 1;
-  cursor: grab;
-  touch-action: none; /* a finger on it drags it, and doesn't scroll the page */
 }
 
 .sort-big { --sort-size: 88px; }
@@ -63,25 +61,4 @@
   align-items: center;
   justify-content: center;
   gap: 6px 10px;
-}
-
-/* Everything sorted: each pad gets a check mark. */
-.sort-done .sort-pad {
-  border-color: var(--here);
-  box-shadow: 0 4px 0 var(--here);
-}
-
-.sort-done .sort-pad::after {
-  content: "✓";
-  position: absolute;
-  top: -10px;
-  right: -8px;
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--here);
-  color: var(--white);
-  font-weight: 800;
 }

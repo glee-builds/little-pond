@@ -107,7 +107,7 @@ export function render(container, puzzle, onDone, session) {
       return () => {
         over = true;
         round.things.forEach((kind, i) => put(i, round.pads.indexOf(kind)));
-        row.classList.add('sort-done');
+        for (const pad of pads) pad.classList.add('right');
         return 'Every one is on its pad';
       };
     },

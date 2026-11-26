@@ -1,4 +1,4 @@
-/* Hop Away (src/games/hop-away.js) */
+/* Hop Away (src/games/hop-away.js): ducklings on logs, and water for the ones that hop off. */
 
 /* The pond: logs with ducklings on them, and open water below for the ones that hop off. */
 .hop-pond {
@@ -24,7 +24,7 @@
   width: 56px;
 }
 
-/* In the water: small and faded, still there to see but not to count. */
+/* In the water: small (and faded: .away in styles.css). */
 .hop-water {
   display: flex;
   justify-content: center;
@@ -35,8 +35,6 @@
 
 .hop-water .duckling {
   width: 30px;
-  opacity: 0.45;
-  pointer-events: none;
   animation: hop-off 600ms ease-in backwards;
 }
 
@@ -55,16 +53,10 @@
   position: absolute;
   inset: 0;
   margin: auto;
-  width: 88px;
-  height: 88px;
-  display: grid;
-  place-items: center;
-  border: 0;
-  border-radius: 50%;
+  border-color: var(--go);
   background: var(--go);
   color: var(--on-go);
-  cursor: pointer;
-  box-shadow: 0 5px 0 var(--numbers-ink);
+  box-shadow: 0 4px 0 var(--numbers-ink);
   animation: hop-go 1.2s ease-in-out infinite;
 }
 

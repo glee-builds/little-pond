@@ -6,8 +6,8 @@
 // the sound again. It builds hearing the first sound in a word.
 
 import { createRandom } from '../seed.js';
-import { make, button } from '../ui.js';
-import { playRounds } from '../scene.js';
+import { button } from '../ui.js';
+import { pictureCards, playRounds } from '../scene.js';
 import { ENOUGH, loadWords, names, recorded, play } from '../sounds.js';
 
 export const meta = {
@@ -56,11 +56,12 @@ export function verify(puzzle) {
   const problems = [];
   if (puzzle.rounds.length !== ROUNDS) problems.push(`${puzzle.rounds.length} rounds, not ${ROUNDS}`);
   puzzle.rounds.forEach(({ sound, word, choices }, i) => {
-    if (word[0] !== sound) problems.push(`round ${i + 1}: "${word}" does not start with "${sound}"`);
-    if (puzzle.rounds.findIndex((round) => round.sound === sound) !== i) problems.push(`round ${i + 1}: "${sound}" is asked twice`);
-    if (choices.length !== puzzle.level + 1 || new Set(choices.map((choice) => choice.picture)).size !== choices.length) problems.push(`round ${i + 1}: the choices are not ${puzzle.level + 1} different pictures`);
-    if (choices.filter((choice) => check({ word }, choice.word)).length !== 1) problems.push(`round ${i + 1}: not exactly one right picture`);
-    if (choices.some((choice) => choice.word !== word && alike(choice.word[0], sound))) problems.push(`round ${i + 1}: a wrong picture starts with a sound like "${sound}"`);
+    const say = (problem) => problems.push(`round ${i + 1}: ${problem}`);
+    if (word[0] !== sound) say(`"${word}" does not start with "${sound}"`);
+    if (puzzle.rounds.findIndex((round) => round.sound === sound) !== i) say(`"${sound}" is asked twice`);
+    if (choices.length !== puzzle.level + 1 || new Set(choices.map((choice) => choice.picture)).size !== choices.length) say(`the choices are not ${puzzle.level + 1} different pictures`);
+    if (choices.filter((choice) => check({ word }, choice.word)).length !== 1) say('not exactly one right picture');
+    if (choices.some((choice) => choice.word !== word && alike(choice.word[0], sound))) say(`a wrong picture starts with a sound like "${sound}"`);
   });
   return { ok: problems.length === 0, problems };
 }
@@ -95,16 +96,10 @@ export function render(container, puzzle, onDone, session) {
       const hear = button('snd-hear', '🔊', () => { turn += 1; play(round.sound); });
       hear.setAttribute('aria-label', 'Hear the sound');
       hear.insertAdjacentHTML('afterbegin', '<img src="assets/duck.svg" alt="">');
-      const row = make('div', `choices${round.choices.length === 2 ? ' snd-two' : ''}`);
-      const cards = round.choices.map((choice) => {
-        const card = row.appendChild(button('choice', '', () => { turn += 1; answer(choice.word, card); }));
-        card.append(make('span', 'snd-picture', choice.picture));
-        card.setAttribute('aria-label', choice.word);
-        return card;
-      });
-      stage.append(hear, row);
+      const cards = pictureCards(round.choices, (word, card) => { turn += 1; answer(word, card); });
+      stage.append(hear, cards.node);
       return () => {
-        cards[round.choices.findIndex((choice) => choice.word === round.word)].classList.add('choice-right');
+        cards.markRight(round.word);
         return round.word;
       };
     },

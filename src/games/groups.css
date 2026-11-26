@@ -1,26 +1,6 @@
 /* Groups (src/games/groups.js): ducklings on the bank, lily pads to put them on. */
 
-.grp-bank,
-.grp-pad {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-content: center;
-  gap: 4px;
-}
-
-/* The bank keeps its size as it empties, so the pads don't jump. */
-.grp-bank {
-  min-height: 72px;
-  padding: 8px;
-  border-radius: 20px;
-  background: var(--bank);
-}
-
-.grp-bank-tall {
-  min-height: 132px;
-}
-
+/* The pads, on the water. */
 .grp-pads {
   display: flex;
   flex-direction: column;
@@ -30,73 +10,11 @@
   background: var(--water);
 }
 
-/* A lily pad, long enough for a row of 5. */
-.grp-pad {
-  position: relative;
-  min-height: 68px;
-  padding: 6px;
-  border-radius: 34px;
-  background: var(--pad);
-  box-shadow: inset 0 -4px 0 var(--pad-edge);
-  cursor: pointer;
-}
-
-/* Big enough to drag, and a drag doesn't scroll the page. */
-.grp-bank .duckling,
-.grp-pad .duckling {
-  width: 56px;
-  height: 56px;
-  display: grid;
-  align-content: center;
-  touch-action: none;
-}
-
-/* The "I'm done" button: asleep until every duckling is on a pad. */
-.grp-done {
-  align-self: center;
-  width: 76px;
-  height: 76px;
-  border: 3px solid var(--here);
-  border-radius: 50%;
-  background: var(--surface);
-  color: var(--here-ink);
-  font-size: 2.4rem;
-  font-weight: 800;
-  line-height: 1;
-  cursor: pointer;
-  box-shadow: 0 4px 0 var(--here);
-}
-
-.grp-done:active {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 var(--here);
-}
-
-.grp-done:disabled {
-  opacity: 0.3;
-}
-
-/* Right: every pad gets a check mark. */
-.grp-right .grp-pad::after {
-  content: "✓";
-  position: absolute;
-  top: -6px;
-  right: -4px;
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--here);
-  color: var(--white);
-  font-weight: 800;
-}
-
 /* More than 5 on one pad (never a right answer): they squeeze up in one row, so the pad doesn't grow. */
-.grp-pad:has(.duckling:nth-child(6)) {
+.grp-pads .long-pad:has(.duckling:nth-child(6)) {
   flex-wrap: nowrap;
 }
 
-.grp-pad:has(.duckling:nth-child(6)) .duckling + .duckling {
+.grp-pads .long-pad:has(.duckling:nth-child(6)) .duckling + .duckling {
   margin-left: -32px;
 }

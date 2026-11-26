@@ -1,4 +1,4 @@
-/* Match the Number (src/games/match-the-number.js) */
+/* Match the Number (src/games/match-the-number.js): three lily pads, and a numeral to put on one. */
 
 /* A lily pad: its ducklings in rows of 5 on the left, and room on the right
    for the numeral. Always two rows tall, so the three pads match. */
@@ -9,20 +9,14 @@
   justify-content: space-between;
   gap: 6px;
   min-height: 104px;
-  padding: 6px 10px;
+  padding: 6px 8px;
   border: 3px solid var(--pad-edge);
   border-radius: 24px;
   background: var(--pad);
 }
 
-.mtn-ducks {
-  display: grid;
-  grid-template-columns: repeat(5, 44px);
-  gap: 4px;
-}
-
-.mtn-pad .duckling {
-  width: 44px;
+.mtn-pad .rows-of-5 {
+  --duck: 48px;
 }
 
 /* Where the numeral waits; it keeps its room when the numeral has gone. */
@@ -46,8 +40,6 @@
   font-size: 3rem;
   font-weight: 800;
   line-height: 1;
-  cursor: grab;
-  touch-action: none; /* a drag moves the numeral, not the page */
   box-shadow: 0 4px 0 var(--numbers);
 }
 

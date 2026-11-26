@@ -9,7 +9,7 @@
 
 import { createRandom } from '../seed.js';
 import { make, button } from '../ui.js';
-import { playRounds } from '../scene.js';
+import { DRAG_START, pictureCards, playRounds } from '../scene.js';
 import { speak } from '../voice.js';
 import { ENOUGH, loadWords, names, recorded, play } from '../sounds.js';
 
@@ -62,20 +62,20 @@ export function verify(puzzle) {
   const problems = [];
   if (puzzle.rounds.length !== ROUNDS) problems.push(`${puzzle.rounds.length} rounds, not ${ROUNDS}`);
   puzzle.rounds.forEach(({ word, choices }, i) => {
+    const say = (problem) => problems.push(`round ${i + 1}: ${problem}`);
     const before = puzzle.rounds.slice(0, i).map((round) => round.word);
-    if (!/^[a-z]{3}$/.test(word)) problems.push(`round ${i + 1}: "${word}" is not three letters`);
-    if (before.includes(word)) problems.push(`round ${i + 1}: "${word}" comes twice`);
-    if (new Set(choices.map((choice) => choice.word)).size !== 3 || new Set(choices.map((choice) => choice.picture)).size !== 3) problems.push(`round ${i + 1}: the choices are not 3 different pictures`);
-    if (choices.filter((choice) => check({ word }, choice.word)).length !== 1) problems.push(`round ${i + 1}: not exactly one right picture`);
-    if (puzzle.level === 1 && isStretchy(word) && !before.every(isStretchy)) problems.push(`round ${i + 1}: a stretchy word comes after one that isn't`);
-    if (puzzle.level === 1 && choices.some((choice) => choice.word !== word && choice.word[0] === word[0])) problems.push(`round ${i + 1}: a wrong picture starts like the word`);
+    if (!/^[a-z]{3}$/.test(word)) say(`"${word}" is not three letters`);
+    if (before.includes(word)) say(`"${word}" comes twice`);
+    if (new Set(choices.map((choice) => choice.word)).size !== 3 || new Set(choices.map((choice) => choice.picture)).size !== 3) say('the choices are not 3 different pictures');
+    if (choices.filter((choice) => check({ word }, choice.word)).length !== 1) say('not exactly one right picture');
+    if (puzzle.level === 1 && isStretchy(word) && !before.every(isStretchy)) say(`a stretchy word comes after one that isn't`);
+    if (puzzle.level === 1 && choices.some((choice) => choice.word !== word && choice.word[0] === word[0])) say('a wrong picture starts like the word');
   });
   return { ok: problems.length === 0, problems };
 }
 
 const LINE = 'Slide the duckling. What is the word?';
 const END = 4; // the duckling's stops: 0 is the start, 1 to 3 are under the letters, 4 is the end
-const DRAG_START = 8; // pixels a finger must move before a tap becomes a slide
 
 export function render(container, puzzle, onDone, session) {
   playRounds(container, puzzle, onDone, session, {
@@ -89,13 +89,8 @@ export function render(container, puzzle, onDone, session) {
       const duck = track.appendChild(button('sld-duck'));
       duck.innerHTML = '<img src="assets/duck.svg" alt="" draggable="false">';
       duck.setAttribute('aria-label', 'Slide to the next letter');
-      const row = make('div', 'choices choices-waiting');
-      const cards = round.choices.map((choice) => {
-        const card = row.appendChild(button('choice', '', () => answer(choice.word, card)));
-        card.append(make('span', 'sld-picture', choice.picture));
-        card.setAttribute('aria-label', choice.word);
-        return card;
-      });
+      const cards = pictureCards(round.choices, answer);
+      cards.sleep();
 
       let stop = 0;
       let over = false; // the round has been answered
@@ -117,7 +112,7 @@ export function render(container, puzzle, onDone, session) {
           sounding.then(() => {
             if (over) return;
             speak(round.word);
-            row.classList.remove('choices-waiting'); // the pictures wake up once the word has been slid
+            cards.wake(); // the pictures wake up once the word has been slid
           });
         }
       }
@@ -143,12 +138,12 @@ export function render(container, puzzle, onDone, session) {
         else moveTo(stop === END ? 0 : (stop + 1) / END);
       });
 
-      stage.append(word, track, row);
+      stage.append(word, track, cards.node);
       return () => {
         over = true;
         stop = END;
         show(1);
-        cards[round.choices.findIndex((choice) => choice.word === round.word)].classList.add('choice-right');
+        cards.markRight(round.word);
         return round.word;
       };
     },

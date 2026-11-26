@@ -1,13 +1,13 @@
 // How tests/screens.mjs plays Groups (see tests/plays/how-many.mjs for what
 // each piece is). Ducklings are moved the tap-tap way: tap one, tap a pad.
 
-export const ready = `Boolean(G.querySelector('.grp-pad'))`;
+export const ready = `Boolean(G.querySelector('.long-pad'))`;
 
 // Put duckling i on the pad that `to` gives for it, then tap the check mark.
 const place = (to) => `{
-  const pads = [...G.querySelectorAll('.grp-pad')];
+  const pads = [...G.querySelectorAll('.long-pad')];
   [...G.querySelectorAll('.duckling')].forEach((duck, i) => { duck.click(); pads[${to}].click(); });
-  G.querySelector('.grp-done').click();
+  G.querySelector('.round-button').click();
 }`;
 
 // Deal them out one pad at a time: the same number lands on each.
@@ -16,9 +16,9 @@ export const right = place('i % pads.length');
 export const wrong = place('0');
 
 export const extra = `
-  const pads = [...G.querySelectorAll('.grp-pad')];
+  const pads = [...G.querySelectorAll('.long-pad')];
   const ducks = [...G.querySelectorAll('.duckling')];
-  const done = G.querySelector('.grp-done');
+  const done = G.querySelector('.round-button');
   done.click();
   await wait();
   if (G.querySelector('.wiggle')) return 'the check mark worked before every duckling was on a pad';

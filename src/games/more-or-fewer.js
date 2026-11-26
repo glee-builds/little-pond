@@ -7,8 +7,8 @@
 // It builds comparing amounts: more, fewer, and the same.
 
 import { createRandom } from '../seed.js';
-import { make, button, plural } from '../ui.js';
-import { duckling, playRounds } from '../scene.js';
+import { make, button, plural, range } from '../ui.js';
+import { duckling, ducklings, checkButton, playRounds } from '../scene.js';
 
 export const meta = {
   title: 'More or Fewer', kind: 'numbers', levels: 3, css: true,
@@ -25,7 +25,6 @@ const LEVELS = [
 ];
 const TOP = LEVELS.length; // the level where the player makes the pads the same
 
-const range = (low, high) => Array.from({ length: high - low + 1 }, (_, i) => low + i);
 const rule = (level) => LEVELS[level - 1] ?? LEVELS.at(-1);
 const pairs = ({ most, apart }) => range(1, most).flatMap((a) => range(1, most).filter((b) => apart(Math.abs(a - b))).map((b) => [a, b]));
 
@@ -60,15 +59,15 @@ export function verify(puzzle) {
   if (puzzle.rounds.length !== ROUNDS) problems.push(`${puzzle.rounds.length} rounds, not ${ROUNDS}`);
   if (!top && !['more', 'fewer'].every((ask) => puzzle.rounds.some((round) => round.ask === ask))) problems.push('not both "more" and "fewer"');
   puzzle.rounds.forEach((round, i) => {
+    const say = (problem) => problems.push(`round ${i + 1}: ${problem}`);
     const { ask, pads } = round;
-    const at = `round ${i + 1}`;
-    if ((ask === 'same') !== top || !['more', 'fewer', 'same'].includes(ask)) problems.push(`${at}: "${ask}" does not belong at level ${puzzle.level}`);
-    if (pads.length !== 2 || pads.some((count) => !(count >= 1 && count <= most))) problems.push(`${at}: a pad is outside 1 to ${most}`);
-    if (!apart(Math.abs(pads[0] - pads[1]))) problems.push(`${at}: ${pads[0]} and ${pads[1]} are the wrong distance apart`);
+    if ((ask === 'same') !== top || !['more', 'fewer', 'same'].includes(ask)) say(`"${ask}" does not belong at level ${puzzle.level}`);
+    if (pads.length !== 2 || pads.some((count) => !(count >= 1 && count <= most))) say(`a pad is outside 1 to ${most}`);
+    if (!apart(Math.abs(pads[0] - pads[1]))) say(`${pads[0]} and ${pads[1]} are the wrong distance apart`);
     // 'same' can always be reached, because both pads are within 0 to MOST.
     const answers = ask === 'same' ? range(0, MOST) : [0, 1];
-    if (answers.filter((answer) => check(round, answer)).length !== 1) problems.push(`${at}: not exactly one right answer`);
-    if (ask === 'same' && check(round, pads[1])) problems.push(`${at}: the pads start the same`);
+    if (answers.filter((answer) => check(round, answer)).length !== 1) say('not exactly one right answer');
+    if (ask === 'same' && check(round, pads[1])) say('the pads start the same');
   });
   return { ok: problems.length === 0, problems };
 }
@@ -78,14 +77,14 @@ const LINES = { more: 'Which pad has more?', fewer: 'Which pad has fewer?', same
 /** Tap a pad: the round where one pad has more. */
 function drawChoice(stage, round, answer) {
   const pads = round.pads.map((count, i) => {
-    const pad = button('mof-pad', '', () => answer(i, pad));
+    const pad = button('rows-of-5 mof-pad', '', () => answer(i, pad));
     pad.setAttribute('aria-label', plural(count, 'duckling'));
-    for (let n = 0; n < count; n++) pad.append(duckling());
+    ducklings(count, pad);
     return pad;
   });
   stage.append(...pads);
   return () => {
-    pads[answerPad(round)].classList.add('choice-right');
+    pads[answerPad(round)].classList.add('right');
     const [few, many] = [...round.pads].sort((a, b) => a - b);
     return round.ask === 'more' ? `${many} is more than ${few}` : `${few} is fewer than ${many}`;
   };
@@ -94,33 +93,31 @@ function drawChoice(stage, round, answer) {
 /** Add or send away ducklings on the second pad until it matches the first. */
 function drawSame(stage, round, answer) {
   const [goal, start] = round.pads;
-  let open = true; // false once the round is over
-  const fixed = make('div', 'mof-pad');
-  const mine = make('div', 'mof-pad mof-mine');
+  let over = false;
+  const fixed = make('div', 'rows-of-5 mof-pad');
+  const mine = make('div', 'rows-of-5 mof-pad mof-mine');
   const held = () => mine.querySelectorAll('.duckling').length;
   const add = () => {
-    if (!open || held() >= MOST) return;
+    if (over || held() >= MOST) return;
     const duck = mine.appendChild(duckling());
-    duck.addEventListener('click', () => open && duck.remove());
+    duck.addEventListener('click', () => over || duck.remove());
   };
-  for (let n = 0; n < goal; n++) fixed.append(duckling());
+  ducklings(goal, fixed);
   for (let n = 0; n < start; n++) add();
 
   const more = button('mof-add', '', add);
   more.append(duckling(), make('span', '', '➕'));
   more.setAttribute('aria-label', 'Add a duckling');
-  const done = button('mof-check', '✓', () => answer(held(), mine));
-  done.setAttribute('aria-label', 'Check');
   const tools = make('div', 'mof-tools');
-  tools.append(more, done);
+  tools.append(more, checkButton(() => answer(held(), mine)));
   stage.append(fixed, mine, tools);
 
   return () => {
     while (held() > goal) mine.querySelector('.duckling').remove();
     while (held() < goal) add();
-    open = false;
-    fixed.classList.add('choice-right');
-    mine.classList.add('choice-right');
+    over = true;
+    fixed.classList.add('right');
+    mine.classList.add('right');
     return `${plural(goal, 'duckling')} on each pad`;
   };
 }

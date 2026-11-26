@@ -2,19 +2,19 @@
 // each piece is). G.round.whole means a splitting round (level 3): its
 // ducklings are moved the tap-tap way: tap one, tap a pad.
 
-export const ready = `Boolean(G.querySelector('.join-pad'))`;
+export const ready = `Boolean(G.querySelector('.long-pad'))`;
 
 // Joining: push the pads together, let the cards wake up, and tap a card.
 const card = (right) => `
-  G.querySelector('.join-pad').click(); await wait(900);
+  G.querySelector('.long-pad').click(); await wait(900);
   [...G.querySelectorAll('.choice')].find((card) => (card.getAttribute('aria-label') === String(G.round.a + G.round.b)) === ${right}).click();`;
 
 // Splitting: `to` gives the pad for duckling i. Only ducklings still on the
 // bank move, and the first one, so it is one check however the round stands.
 const split = (to) => `
-  const pads = [...G.querySelectorAll('.join-pad')];
+  const pads = [...G.querySelectorAll('.long-pad')];
   [...G.querySelectorAll('.duckling')].forEach((duck, i) => {
-    if (i === 0 || duck.closest('.join-bank')) { duck.click(); pads[${to}].click(); }
+    if (i === 0 || duck.closest('.bank')) { duck.click(); pads[${to}].click(); }
   });`;
 
 // One duckling on the second pad, the rest on the first.
@@ -24,7 +24,7 @@ export const wrong = `if (G.round.whole) { ${split('0')} } else { ${card(false)}
 
 export const extra = `
   if (/[+=]/.test(G.textContent)) return 'a sum is written on the screen';
-  const pads = [...G.querySelectorAll('.join-pad')];
+  const pads = [...G.querySelectorAll('.long-pad')];
   const ducks = [...G.querySelectorAll('.duckling')];
   if (G.round.whole) {
     if (ducks.length !== G.round.whole || pads.some((pad) => pad.children.length)) return 'the round does not start as one group and two empty pads';

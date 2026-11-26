@@ -1,4 +1,4 @@
-/* Patterns (src/games/patterns.js). */
+/* Patterns (src/games/patterns.js): a row of pond things with a gap at the end, and picture cards. */
 
 /* The pattern, on the water. --columns is set per round. */
 .pat-row {
@@ -50,12 +50,6 @@
   0% { transform: translateY(40px) scale(0.6); }
   60% { transform: translateY(-10px); }
   100% { transform: none; }
-}
-
-/* 2 or 3 picture cards, sharing the width. */
-.choices.pat-choices {
-  grid-template-columns: repeat(var(--columns), minmax(0, 130px));
-  justify-content: center;
 }
 
 .pat-card {

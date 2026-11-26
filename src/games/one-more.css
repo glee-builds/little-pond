@@ -1,4 +1,4 @@
-/* One More, One Less (src/games/one-more.js) */
+/* One More, One Less (src/games/one-more.js): one duckling hops onto the pad, or off it. */
 
 .om-pad {
   position: relative;
@@ -24,14 +24,12 @@
   100% { transform: none; }
 }
 
-/* The duckling that hopped away: in the water at the corner, small and faded, not to count. */
-.duckling.om-gone {
+/* The duckling that hopped away: in the water at the corner, small (and faded: .away in styles.css). */
+.om-pad .away {
   position: absolute;
   right: 8px;
   bottom: 6px;
   width: 38px;
-  opacity: 0.45;
-  pointer-events: none;
   animation: om-off 600ms ease-in;
 }
 
@@ -43,7 +41,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .om-new,
-  .duckling.om-gone {
+  .om-pad .away {
     animation: none;
   }
 }

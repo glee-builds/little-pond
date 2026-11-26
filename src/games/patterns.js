@@ -6,13 +6,10 @@
 // carrying it on.
 
 import { createRandom } from '../seed.js';
-import { make, button } from '../ui.js';
-import { playRounds } from '../scene.js';
+import { make } from '../ui.js';
+import { answerCards, playRounds } from '../scene.js';
 
 const svg = (inside) => `<svg viewBox="0 0 100 100" aria-hidden="true">${inside}</svg>`;
-// Fixed colors, like the duckling's (assets/duck.svg), where no variable holds them.
-const YELLOW = '#ffd84d';
-const SHELL_LINE = '#c9601a';
 
 // The pond things, each a different shape as well as a different color.
 const PICTURES = {
@@ -29,10 +26,10 @@ const PICTURES = {
     <ellipse cx="30" cy="56" rx="20" ry="8" transform="rotate(16 30 56)"/><ellipse cx="70" cy="56" rx="20" ry="8" transform="rotate(-16 70 56)"/></g>
     <rect x="45" y="24" width="10" height="70" rx="5" fill="var(--here)"/><circle cx="50" cy="18" r="12" fill="var(--here)"/>
     <circle cx="44" cy="15" r="3.5" fill="var(--on-go)"/><circle cx="56" cy="15" r="3.5" fill="var(--on-go)"/>`),
-  snail: svg(`<path d="M14 52 L10 38 M24 51 L27 37" stroke="${YELLOW}" stroke-width="4" stroke-linecap="round"/>
-    <rect x="10" y="72" width="84" height="16" rx="8" fill="${YELLOW}"/><circle cx="20" cy="62" r="13" fill="${YELLOW}"/>
-    <circle cx="60" cy="50" r="30" fill="var(--go)"/><circle cx="60" cy="50" r="17" fill="none" stroke="${SHELL_LINE}" stroke-width="4"/>
-    <circle cx="60" cy="50" r="5" fill="${SHELL_LINE}"/><circle cx="16" cy="60" r="3" fill="var(--on-go)"/>`),
+  snail: svg(`<path d="M14 52 L10 38 M24 51 L27 37" stroke="var(--star)" stroke-width="4" stroke-linecap="round"/>
+    <rect x="10" y="72" width="84" height="16" rx="8" fill="var(--star)"/><circle cx="20" cy="62" r="13" fill="var(--star)"/>
+    <circle cx="60" cy="50" r="30" fill="var(--go)"/><circle cx="60" cy="50" r="17" fill="none" stroke="var(--on-go)" stroke-width="4"/>
+    <circle cx="60" cy="50" r="5" fill="var(--on-go)"/><circle cx="16" cy="60" r="3" fill="var(--on-go)"/>`),
 };
 const THINGS = Object.keys(PICTURES);
 
@@ -114,17 +111,10 @@ export function render(container, puzzle, onDone, session) {
       row.style.setProperty('--columns', cells <= 5 ? cells : Math.ceil(cells / 2));
       for (const kind of round.row) row.append(picture(kind, 'pat-thing'));
       const slot = row.appendChild(make('span', 'pat-thing pat-slot', '?'));
-      const cards = make('div', 'choices pat-choices');
-      cards.style.setProperty('--columns', round.choices.length);
-      const buttons = round.choices.map((kind) => {
-        const card = button('choice', '', () => answer(kind, card));
-        card.append(picture(kind, 'pat-card'));
-        card.setAttribute('aria-label', kind);
-        return cards.appendChild(card);
-      });
-      stage.append(row, cards);
+      const cards = answerCards(round.choices, (card, kind) => card.append(picture(kind, 'pat-card')), answer);
+      stage.append(row, cards.node);
       return () => {
-        buttons[round.choices.indexOf(round.answer)].classList.add('choice-right');
+        cards.markRight(round.answer);
         slot.replaceChildren(picture(round.answer, 'pat-hop'));
         slot.classList.add('pat-filled');
         return `A ${round.answer} comes next`;

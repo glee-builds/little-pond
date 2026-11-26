@@ -119,7 +119,7 @@ export function render(container, puzzle, onDone, session) {
       return () => {
         over = true;
         lineUp(round).forEach((size, i) => slots[i].append(ducks[round.sizes.indexOf(size)]));
-        log.classList.add('ord-done');
+        log.classList.add('right');
         return round.down ? 'Biggest to smallest' : 'Smallest to biggest';
       };
     },

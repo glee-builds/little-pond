@@ -8,8 +8,8 @@
 // counting and adding: one more is the next number, one less the one before.
 
 import { createRandom } from '../seed.js';
-import { make, plural } from '../ui.js';
-import { duckling, dotCard, tapToCount, playRounds } from '../scene.js';
+import { make, plural, range } from '../ui.js';
+import { duckling, ducklings, tapToCount, dotCards, playRounds } from '../scene.js';
 
 export const meta = {
   title: 'One More, One Less', kind: 'numbers', levels: 3, css: true,
@@ -21,7 +21,6 @@ export const ROUNDS = 4;
 // Every card is 1 or more, so a round never starts with fewer than 2.
 const LEVELS = [{ most: 5, less: false }, { most: 5, less: true }, { most: 10, less: true }];
 
-const range = (low, high) => Array.from({ length: high - low + 1 }, (_, i) => low + i);
 const now = (round) => round.start + round.step;
 
 /** The day's rounds: each is { start, step, choices }; step is 1 (one more) or -1 (one less). */
@@ -47,12 +46,13 @@ export function verify(puzzle) {
   const { most, less } = LEVELS[puzzle.level - 1] ?? {};
   if (puzzle.rounds.length !== ROUNDS) problems.push(`${puzzle.rounds.length} rounds, not ${ROUNDS}`);
   puzzle.rounds.forEach((round, i) => {
+    const say = (problem) => problems.push(`round ${i + 1}: ${problem}`);
     const { start, step, choices } = round;
-    if (step !== 1 && !(less && step === -1)) problems.push(`round ${i + 1}: a step of ${step} is not allowed at this level`);
-    if (!(start >= 2 && start <= most - 1)) problems.push(`round ${i + 1}: starting with ${start} is outside 2 to ${most - 1}`);
-    if ([...choices].sort((a, b) => a - b).join() !== [start - 1, start, start + 1].join()) problems.push(`round ${i + 1}: the choices are not ${start} and its two neighbours`);
-    if (choices.filter((choice) => choice === now(round)).length !== 1) problems.push(`round ${i + 1}: not exactly one right choice`);
-    if (i > 0 && start === puzzle.rounds[i - 1].start) problems.push(`round ${i + 1}: the same number as the round before`);
+    if (step !== 1 && !(less && step === -1)) say(`a step of ${step} is not allowed at this level`);
+    if (!(start >= 2 && start <= most - 1)) say(`starting with ${start} is outside 2 to ${most - 1}`);
+    if ([...choices].sort((a, b) => a - b).join() !== [start - 1, start, start + 1].join()) say(`the choices are not ${start} and its two neighbours`);
+    if (choices.filter((choice) => choice === now(round)).length !== 1) say('not exactly one right choice');
+    if (i > 0 && start === puzzle.rounds[i - 1].start) say('the same number as the round before');
   });
   return { ok: problems.length === 0, problems };
 }
@@ -67,22 +67,22 @@ export function render(container, puzzle, onDone, session) {
     check,
     draw(stage, round, answer) {
       const pad = make('div', `big-pad om-pad${Math.max(round.start, now(round)) > 5 ? ' big-pad-full' : ''}`);
-      const ducks = range(1, round.start).map(() => pad.appendChild(duckling()));
-      const row = make('div', 'choices choices-waiting');
-      const cards = round.choices.map((count) => row.appendChild(dotCard(count, (card) => answer(count, card))));
+      const ducks = ducklings(round.start, pad);
+      const cards = dotCards(round.choices, answer);
+      cards.sleep();
       setTimeout(() => {
         if (round.step === 1) {
           ducks.push(pad.appendChild(duckling()));
           ducks.at(-1).classList.add('om-new');
         } else {
-          ducks.pop().classList.add('om-gone');
+          ducks.pop().classList.add('away');
         }
         tapToCount(ducks);
-        setTimeout(() => row.classList.remove('choices-waiting'), HOP);
+        setTimeout(cards.wake, HOP);
       }, BEAT);
-      stage.append(pad, row);
+      stage.append(pad, cards.node);
       return () => {
-        cards[round.choices.indexOf(now(round))].classList.add('choice-right');
+        cards.markRight(now(round));
         return plural(now(round), 'duckling');
       };
     },

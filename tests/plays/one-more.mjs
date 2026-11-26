@@ -16,6 +16,6 @@ export const extra = `
   if (G.querySelectorAll('.duckling').length !== start) return 'the pad does not start with the starting group';
   ${hop}
   if (G.querySelector('.choices-waiting')) return 'the cards did not wake up after the hop';
-  if (G.querySelectorAll(step === 1 ? '.om-new' : '.om-gone').length !== 1) return 'no duckling is marked as the one that hopped';
+  if (G.querySelectorAll(step === 1 ? '.om-new' : '.away').length !== 1) return 'no duckling is marked as the one that hopped';
   for (const duck of G.querySelectorAll('.duckling')) duck.click();
   return G.querySelectorAll('.count-badge').length === start + step ? '' : 'tapping did not count just the ducklings on the pad';`;

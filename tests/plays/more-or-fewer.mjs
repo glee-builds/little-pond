@@ -12,7 +12,7 @@ const makeSame = `
   const [goal, start] = G.round.pads;
   for (let n = start; n < goal; n++) G.querySelector('.mof-add').click();
   for (let n = start; n > goal; n--) G.querySelector('.mof-mine .duckling').click();`;
-const checkIt = `G.querySelector('.mof-check').click();`;
+const checkIt = `G.querySelector('.round-button').click();`;
 
 // Answer the round on screen correctly.
 export const right = `if (G.round.ask === 'same') { ${makeSame} ${checkIt} } else { ${tapPad(true)} }`;

@@ -50,30 +50,8 @@
   display: grid;
   align-items: end;
   justify-items: center;
-  cursor: grab;
-  touch-action: none; /* a finger on it drags it, and doesn't scroll the page */
 }
 
 .ord-duck img {
   width: var(--ord-width);
-}
-
-/* In order: the log turns teal, with a check mark. */
-.ord-done {
-  box-shadow: 0 0 0 4px var(--here);
-}
-
-.ord-done::after {
-  content: "✓";
-  position: absolute;
-  top: -12px;
-  right: -8px;
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--here);
-  color: var(--white);
-  font-weight: 800;
 }

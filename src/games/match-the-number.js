@@ -7,8 +7,8 @@
 // It builds linking the written numeral to the amount it stands for.
 
 import { createRandom } from '../seed.js';
-import { make, button, plural } from '../ui.js';
-import { duckling, tapToCount, draggable, playRounds } from '../scene.js';
+import { make, button, plural, range } from '../ui.js';
+import { ducklings, tapToCount, draggable, playRounds } from '../scene.js';
 
 export const meta = {
   title: 'Match the Number', kind: 'numbers', levels: 3, css: true,
@@ -24,7 +24,6 @@ export const ROUNDS = 4;
 const RANGES = [[1, 3], [1, 5], [1, 10]];
 const NEAR = 2; // at the top level, the other pads are within this of the answer
 
-const range = (low, high) => Array.from({ length: high - low + 1 }, (_, i) => low + i);
 const isTop = (level) => level >= RANGES.length;
 
 /** The day's rounds: each is { count, pads }, 3 different pads, one holding `count`. */
@@ -50,13 +49,13 @@ export function verify(puzzle) {
   const [low, high] = RANGES[puzzle.level - 1] ?? [];
   if (puzzle.rounds.length !== ROUNDS) problems.push(`${puzzle.rounds.length} rounds, not ${ROUNDS}`);
   puzzle.rounds.forEach((round, i) => {
+    const say = (problem) => problems.push(`round ${i + 1}: ${problem}`);
     const { count, pads } = round;
-    const at = `round ${i + 1}`;
-    if (pads.length !== 3 || new Set(pads).size !== 3) problems.push(`${at}: the pads are not 3 different numbers`);
-    if (pads.some((n) => !(n >= low && n <= high))) problems.push(`${at}: a pad is outside ${low} to ${high}`);
-    if (pads.filter((_, pad) => check(round, pad)).length !== 1) problems.push(`${at}: not exactly one right pad`);
-    if (isTop(puzzle.level) && pads.some((n) => Math.abs(n - count) > NEAR)) problems.push(`${at}: a pad is more than ${NEAR} from ${count}`);
-    if (i > 0 && count === puzzle.rounds[i - 1].count) problems.push(`${at}: the same number as the round before`);
+    if (pads.length !== 3 || new Set(pads).size !== 3) say('the pads are not 3 different numbers');
+    if (pads.some((n) => !(n >= low && n <= high))) say(`a pad is outside ${low} to ${high}`);
+    if (pads.filter((_, pad) => check(round, pad)).length !== 1) say('not exactly one right pad');
+    if (isTop(puzzle.level) && pads.some((n) => Math.abs(n - count) > NEAR)) say(`a pad is more than ${NEAR} from ${count}`);
+    if (i > 0 && count === puzzle.rounds[i - 1].count) say('the same number as the round before');
   });
   return { ok: problems.length === 0, problems };
 }
@@ -66,24 +65,23 @@ export function render(container, puzzle, onDone, session) {
     prompt: ({ count }) => `Put the ${count} on the pad with ${plural(count, 'duckling')}.`,
     check,
     draw(stage, round, answer) {
-      let open = true; // false once the round is over
+      let over = false;
       const pads = round.pads.map((count) => {
         const pad = make('div', 'mtn-pad');
-        const ducks = pad.appendChild(make('div', 'mtn-ducks'));
-        tapToCount(Array.from({ length: count }, () => ducks.appendChild(duckling())));
+        tapToCount(ducklings(count, pad.appendChild(make('div', 'rows-of-5'))));
         return pad;
       });
       const tile = button('mtn-tile', String(round.count));
-      draggable(tile, { targets: () => pads, onDrop: (pad) => answer(pad, pads[pad]), canMove: () => open });
+      draggable(tile, { targets: () => pads, canMove: () => !over, onDrop: (pad) => answer(pad, pads[pad]) });
       const home = make('div', 'mtn-home');
       home.append(tile);
       stage.append(...pads, home);
       return () => {
-        open = false;
+        over = true;
         // The numeral lands beside the ducklings it stands for.
         const right = pads[round.pads.indexOf(round.count)];
         right.append(tile);
-        right.classList.add('choice-right');
+        right.classList.add('right');
         return plural(round.count, 'duckling');
       };
     },

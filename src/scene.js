@@ -1,10 +1,11 @@
-// scene.js: the pieces every number game is made of.
+// scene.js: the pieces the games are made of.
 //
 // A game describes each round as data and draws it with these: ducklings,
-// answer cards with dots, tap-to-count, drag-or-tap, and playRounds, which
-// runs a game's rounds from the first spoken line to the last check mark.
+// tap-to-count, answer cards, the check button, drag-or-tap, the bank of
+// ducklings to move, and playRounds, which runs a game's rounds from the
+// first spoken line to the last check mark.
 
-import { make, button, wiggle, progressDots } from './ui.js';
+import { make, button, wiggle, progressDots, range } from './ui.js';
 import { nextRound } from './rounds.js';
 import { speak } from './voice.js';
 
@@ -17,6 +18,9 @@ export function duckling() {
   node.append(picture);
   return node;
 }
+
+/** `count` ducklings, sitting in `box`. */
+export const ducklings = (count, box) => Array.from({ length: count }, () => box.appendChild(duckling()));
 
 /**
  * Tap to count: tapping one of `things` says the next number aloud and
@@ -36,19 +40,63 @@ export function tapToCount(things, onAll) {
   }
 }
 
-/** An answer card: `count` dots in rows of 5, with the numeral beside them. */
-export function dotCard(count, onPick) {
-  const card = button('choice', '', () => onPick(card));
+// ---------- Answer cards ----------
+
+/**
+ * A row of answer cards, one for each of `values` (numbers or words).
+ * `fill(card, value, i)` puts on a card what it shows. Tapping a card calls
+ * answer(value, card), the way playRounds wants. The row has:
+ *   node               the row itself, to put on the stage
+ *   sleep(), wake()    asleep, the cards are faded and can't be tapped
+ *   markRight(value)   put a check mark on the card for `value`
+ */
+export function answerCards(values, fill, answer) {
+  const node = make('div', 'choices');
+  node.style.setProperty('--cards', values.length);
+  const cards = values.map((value, i) => {
+    const card = node.appendChild(button('choice', '', () => answer(value, card)));
+    card.setAttribute('aria-label', String(value));
+    fill(card, value, i);
+    return card;
+  });
+  return {
+    node,
+    sleep: () => node.classList.add('choices-waiting'),
+    wake: () => node.classList.remove('choices-waiting'),
+    markRight: (value) => cards[values.indexOf(value)].classList.add('right'),
+  };
+}
+
+/** Answer cards for numbers: each has that many dots in rows of 5, with the numeral beside them. */
+export const dotCards = (counts, answer) => answerCards(counts, (card, count) => {
   const dots = make('span', 'choice-dots');
   for (let i = 0; i < count; i++) dots.append(make('i'));
   card.append(dots, make('span', 'choice-number', String(count)));
-  card.setAttribute('aria-label', String(count));
-  return card;
+}, answer);
+
+/** Answer cards for words: `choices` are { word, picture }, and each card shows its picture. */
+export const pictureCards = (choices, answer) => answerCards(choices.map((choice) => choice.word),
+  (card, word, i) => card.append(make('span', 'choice-picture', choices[i].picture)), answer);
+
+/**
+ * The numbers for a round's 3 dot cards: `right`, and 2 others within 2 of
+ * it (and within `low` to `high`), mixed up by `random` (src/seed.js).
+ */
+export function nearChoices(random, right, low, high) {
+  const near = range(Math.max(low, right - 2), Math.min(high, right + 2)).filter((n) => n !== right);
+  return random.shuffle([right, ...random.shuffle(near).slice(0, 2)]);
+}
+
+/** The big round check button: "I'm done, have a look". */
+export function checkButton(onClick) {
+  const node = button('round-button', '✓', onClick);
+  node.setAttribute('aria-label', 'Check');
+  return node;
 }
 
 // ---------- Drag, or tap twice ----------
 
-const DRAG_START = 8; // pixels a finger must move before a tap becomes a drag
+export const DRAG_START = 8; // pixels a finger must move before a tap becomes a drag
 // The thing that was tapped and is waiting for a tap on where it goes.
 let picked = null;
 
@@ -78,10 +126,12 @@ function listenForSecondTap() {
  * box. Either way `onDrop(index)` is called with the box's place in
  * targets(). `canMove()` can say no (for example, once the round is over).
  * While dragging, a copy follows the finger (.drag-ghost), the item itself
- * gets .lifted, and the box under the finger gets .drop-over.
+ * gets .lifted, and the box under the finger gets .drop-over. The item gets
+ * the class .draggable, so a finger on it doesn't scroll the page.
  */
 export function draggable(item, { targets, onDrop, canMove = () => true }) {
   listenForSecondTap();
+  item.classList.add('draggable');
   let drag = null;
   const boxAt = ({ clientX, clientY }) => {
     const hit = document.elementFromPoint(clientX, clientY);
@@ -137,6 +187,39 @@ export function draggable(item, { targets, onDrop, canMove = () => true }) {
     item.classList.add('picked');
   });
 }
+
+/**
+ * The bank: `count` ducklings waiting to be moved onto `pads` (drag one, or
+ * tap it and then a pad). A duckling on a pad can be moved again.
+ * `onMove()` is called after each move. The bank has:
+ *   node        the bank itself, to put on the stage
+ *   isEmpty()   true once every duckling is on a pad
+ *   close()     the round is over: nothing moves any more
+ *   share()     deal the ducklings out, one to each pad in turn
+ */
+export function bank(count, pads, onMove) {
+  let open = true;
+  const node = make('div', `bank${count > 5 ? ' bank-tall' : ''}`);
+  const ducks = ducklings(count, node);
+  for (const duck of ducks) {
+    draggable(duck, {
+      targets: () => pads,
+      canMove: () => open,
+      onDrop(i) {
+        pads[i].append(duck);
+        onMove();
+      },
+    });
+  }
+  return {
+    node,
+    isEmpty: () => !node.children.length,
+    close: () => { open = false; },
+    share: () => ducks.forEach((duck, i) => pads[i % pads.length].append(duck)),
+  };
+}
+
+// ---------- Playing the rounds ----------
 
 const PAUSE = 1400; // time to enjoy a right answer before the next round
 

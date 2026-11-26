@@ -7,8 +7,8 @@
 // leave, and what left can still be seen.
 
 import { createRandom } from '../seed.js';
-import { make, button, plural } from '../ui.js';
-import { duckling, dotCard, tapToCount, playRounds } from '../scene.js';
+import { make, button, plural, range } from '../ui.js';
+import { duckling, tapToCount, dotCards, nearChoices, playRounds } from '../scene.js';
 
 export const meta = {
   title: 'Hop Away', kind: 'numbers', levels: 3, css: true,
@@ -23,7 +23,6 @@ const LEVELS = [
   { start: [4, 10], away: [3, 10], keep: 0 },
 ];
 
-const range = (low, high) => Array.from({ length: high - low + 1 }, (_, i) => low + i);
 const left = (round) => round.start - round.away;
 
 /** The day's rounds: each is { start, away, choices }, with 3 choices close together. */
@@ -36,8 +35,7 @@ export function generate(seed, level = 1) {
     const start = random.pick(range(low, high).filter((n) => n !== rounds.at(-1)?.start));
     const away = random.int(few, Math.min(many, start - keep));
     const stay = start - away;
-    const near = range(Math.max(keep, stay - 2), Math.min(high, stay + 2)).filter((n) => n !== stay);
-    rounds.push({ start, away, choices: random.shuffle([stay, ...random.shuffle(near).slice(0, 2)]) });
+    rounds.push({ start, away, choices: nearChoices(random, stay, keep, high) });
   }
   return { level, rounds };
 }
@@ -50,14 +48,15 @@ export function verify(puzzle) {
   const { start: [low, high], away: [few, many], keep } = LEVELS[puzzle.level - 1] ?? { start: [], away: [] };
   if (puzzle.rounds.length !== ROUNDS) problems.push(`${puzzle.rounds.length} rounds, not ${ROUNDS}`);
   puzzle.rounds.forEach((round, i) => {
+    const say = (problem) => problems.push(`round ${i + 1}: ${problem}`);
     const { start, away, choices } = round;
-    if (!(start >= low && start <= high)) problems.push(`round ${i + 1}: starting with ${start} is outside ${low} to ${high}`);
-    if (!(away >= few && away <= many)) problems.push(`round ${i + 1}: ${away} hopping away is outside ${few} to ${many}`);
-    if (!(left(round) >= keep)) problems.push(`round ${i + 1}: ${left(round)} left is fewer than ${keep}`);
-    if (new Set(choices).size !== 3) problems.push(`round ${i + 1}: the choices are not 3 different numbers`);
-    if (choices.filter((choice) => choice === left(round)).length !== 1) problems.push(`round ${i + 1}: not exactly one right choice`);
-    if (choices.some((choice) => choice < keep || choice > high)) problems.push(`round ${i + 1}: a choice is outside ${keep} to ${high}`);
-    if (i > 0 && start === puzzle.rounds[i - 1].start) problems.push(`round ${i + 1}: the same number as the round before`);
+    if (!(start >= low && start <= high)) say(`starting with ${start} is outside ${low} to ${high}`);
+    if (!(away >= few && away <= many)) say(`${away} hopping away is outside ${few} to ${many}`);
+    if (!(left(round) >= keep)) say(`${left(round)} left is fewer than ${keep}`);
+    if (new Set(choices).size !== 3) say('the choices are not 3 different numbers');
+    if (choices.filter((choice) => choice === left(round)).length !== 1) say('not exactly one right choice');
+    if (choices.some((choice) => choice < keep || choice > high)) say(`a choice is outside ${keep} to ${high}`);
+    if (i > 0 && start === puzzle.rounds[i - 1].start) say('the same number as the round before');
   });
   return { ok: problems.length === 0, problems };
 }
@@ -78,25 +77,26 @@ export function render(container, puzzle, onDone, session) {
       const ducks = range(0, round.start - 1).map((i) => logs[Math.floor(i / 5)].appendChild(duckling()));
       pond.append(...logs, water);
 
-      const row = make('div', 'choices choices-waiting');
-      const cards = round.choices.map((count) => row.appendChild(dotCard(count, (card) => answer(count, card))));
-      const go = button('hop-go', '', () => {
+      const cards = dotCards(round.choices, answer);
+      cards.sleep();
+      const go = button('round-button hop-go', '', () => {
         go.remove();
         ducks.slice(left(round)).forEach((duck, i) => {
+          duck.classList.add('away');
           duck.style.animationDelay = `${i * STAGGER}ms`;
           water.append(duck);
         });
         tapToCount(ducks.slice(0, left(round)));
-        setTimeout(() => row.classList.remove('choices-waiting'), round.away * STAGGER + HOP);
+        setTimeout(cards.wake, round.away * STAGGER + HOP);
       });
       go.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
       go.setAttribute('aria-label', 'Go');
       const answers = make('div', 'hop-answers');
-      answers.append(row, go);
+      answers.append(cards.node, go);
 
       stage.append(pond, answers);
       return () => {
-        cards[round.choices.indexOf(left(round))].classList.add('choice-right');
+        cards.markRight(left(round));
         return plural(left(round), 'duckling');
       };
     },

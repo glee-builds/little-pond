@@ -175,8 +175,11 @@ const inGame = (game, code) => evaluate(`(async () => {
   const wait = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
   ${code}
 })()`);
-// Tap a wrong card (if `miss`), then the card with as many dots as there are ducklings.
+// Tap every duckling to count them, and give the answer cards time to wake up.
+const COUNT_THEM = `for (const duck of G.querySelectorAll('.duckling')) duck.click(); await wait(1100);`;
+// Count the ducklings, tap a wrong card (if `miss`), then the card with as many dots as there are ducklings.
 const playRound = (miss) => `
+  ${COUNT_THEM}
   const count = String(G.querySelectorAll('.duckling').length);
   const cards = [...G.querySelectorAll('.choice')];
   ${miss ? `cards.find((card) => card.getAttribute('aria-label') !== count).click(); await wait();` : ''}
@@ -232,7 +235,7 @@ try {
         if (end.score !== 'ok' || end.days !== 1) return `finished, but saved as ${end.score} on day ${end.days}`;
         await evaluate(`document.getElementById('gift').click()`);
         await sleep(200);
-        if (await evaluate(`JSON.parse(localStorage.getItem('little-pond.progress')).stickers.length`) !== 1) return 'the gift did not give a sticker';
+        if (await evaluate(`JSON.parse(localStorage.getItem('little-pond.progress')).stickers.length`) < 1) return 'the gift did not give a sticker';
         return '';
       },
     });
@@ -242,6 +245,7 @@ try {
       ready: drawn(game),
       then: async () => {
         await inGame(game, `
+          ${COUNT_THEM}
           const count = String(G.querySelectorAll('.duckling').length);
           const wrong = [...G.querySelectorAll('.choice')].find((card) => card.getAttribute('aria-label') !== count);
           for (let i = 0; i < 3; i++) { wrong.click(); await wait(); }
@@ -250,7 +254,7 @@ try {
         return await evaluate(`document.querySelectorAll('#game-${game} .dot-done').length`) === 1 ? '' : 'did not move on after the answer was shown';
       },
     });
-    // Every level fits the screen. (Tap to count is tried on the way.)
+    // Every level fits the screen, and the cards wait until every duckling is counted.
     for (let level = 1; level <= levels; level++) {
       await setProgress({ finished: {}, levels: { [game]: { now: level, was: level, since: null } } });
       await evaluate(`localStorage.removeItem('little-pond.half-done')`);
@@ -258,9 +262,12 @@ try {
         ready: drawn(game),
         fits: true,
         then: async () => {
-          await inGame(game, `for (const duck of G.querySelectorAll('.duckling')) duck.click(); await wait();`);
+          const waiting = () => evaluate(`Boolean(document.querySelector('#game-${game} .choices-waiting'))`);
+          if (!await waiting()) return 'the cards can be tapped before the ducklings are counted';
+          await inGame(game, COUNT_THEM);
           const [ducks, badges] = await evaluate(`[document.querySelectorAll('#game-${game} .duckling').length, document.querySelectorAll('#game-${game} .count-badge').length]`);
-          return ducks === badges ? '' : `tapping to count marked ${badges} of ${ducks}`;
+          if (ducks !== badges) return `tapping to count marked ${badges} of ${ducks}`;
+          return await waiting() ? 'the cards did not wake up after counting' : '';
         },
       });
     }

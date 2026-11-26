@@ -1,12 +1,15 @@
 // how-many.js: How Many.
 //
-// Some ducklings sit on a lily pad. The player taps the card with the same
-// number of dots. It builds seeing a small amount at a glance; tapping the
-// ducklings counts them aloud for anyone who wants to check.
+// Ducklings sit on a lily pad. The player taps each one, and the app counts
+// up aloud with every tap: "1, 2, 3". When the last one is counted, the
+// answer cards wake up and the player taps the card for how many there are.
+// It builds counting one at a time, and that the last number said is how
+// many there are.
 
 import { createRandom } from '../seed.js';
 import { make, plural } from '../ui.js';
 import { duckling, dotCard, tapToCount, playRounds } from '../scene.js';
+import { speak } from '../voice.js';
 
 export const ROUNDS = 4;
 // The fewest and most ducklings at each level.
@@ -45,15 +48,27 @@ export function verify(puzzle) {
   return { ok: problems.length === 0, problems };
 }
 
+const COUNT_LINE = 'Tap each duckling. Count with me!';
+const ASK_LINE = 'How many ducklings?';
+const BEAT = 900; // time for the last number to be said before the question
+
 export function render(container, puzzle, onDone, session) {
+  let counted = false; // has every duckling in this round been tapped?
   playRounds(container, puzzle, onDone, session, {
-    prompt: () => 'How many ducklings?',
+    prompt: () => (counted ? ASK_LINE : COUNT_LINE),
     check,
     draw(stage, round, answer) {
-      const pad = make('div', `big-pad${round.count > 5 ? ' big-pad-full' : ''}`);
-      tapToCount(Array.from({ length: round.count }, () => pad.appendChild(duckling())));
-      const row = make('div', 'choices');
+      counted = false;
+      const pad = make('div', `big-pad to-count${round.count > 5 ? ' big-pad-full' : ''}`);
+      const row = make('div', 'choices choices-waiting');
       const cards = round.choices.map((count) => row.appendChild(dotCard(count, (card) => answer(count, card))));
+      tapToCount(Array.from({ length: round.count }, () => pad.appendChild(duckling())), () => {
+        counted = true;
+        setTimeout(() => {
+          row.classList.remove('choices-waiting');
+          speak(ASK_LINE);
+        }, BEAT);
+      });
       stage.append(pad, row);
       return () => {
         cards[round.choices.indexOf(round.count)].classList.add('choice-right');

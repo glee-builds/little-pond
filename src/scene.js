@@ -21,9 +21,9 @@ export function duckling() {
 /**
  * Tap to count: tapping one of `things` says the next number aloud and
  * pins that number on it. Counting is how the player finds the answer, so
- * it is never a miss or a hint.
+ * it is never a miss or a hint. `onAll` is called once every one is counted.
  */
-export function tapToCount(things) {
+export function tapToCount(things, onAll) {
   let count = 0;
   for (const thing of things) {
     thing.addEventListener('click', () => {
@@ -31,6 +31,7 @@ export function tapToCount(things) {
       count += 1;
       thing.append(make('span', 'count-badge', String(count)));
       speak(String(count));
+      if (count === things.length) onAll?.();
     });
   }
 }

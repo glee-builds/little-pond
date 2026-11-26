@@ -1,0 +1,65 @@
+/* Colors live here as variables so every screen uses the same palette.
+   They match Lily Pad, this app's older sibling. */
+:root {
+  --bg: #fff7ec;
+  --text: #2b2440;
+  --muted: #6b6280;
+  --water: #cdeef5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1d1a2b;
+    --text: #f6f1ff;
+    --muted: #b7aecb;
+    --water: #22405a;
+  }
+}
+
+/* Andika: a font made for children learning to read. The files live in
+   this repo (assets/fonts, with its license), so nothing is fetched from
+   another site. */
+@font-face {
+  font-family: "Andika";
+  src: url("assets/fonts/andika-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Andika";
+  src: url("assets/fonts/andika-latin-700-normal.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Andika", ui-rounded, system-ui, sans-serif;
+}
+
+.hello {
+  min-height: 100dvh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.hello-frog {
+  width: 120px;
+}
+
+.hello h1 {
+  margin: 0;
+  font-size: 2.25rem;
+}
+
+.hello p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.125rem;
+}

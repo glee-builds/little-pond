@@ -27,3 +27,9 @@ node --test
 ```
 
 This uses Node's built-in test runner. It finds every `*.test.js` file in `tests/` and reports which checks pass.
+
+To open every screen in a real browser and play each game to the end (needs Google Chrome):
+
+```bash
+node tests/screens.mjs
+```

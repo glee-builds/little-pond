@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Little Pond app icon: the duckling on a lily pad, on a warm sunrise
+       pond (Lily Pad's icon is a frog on blue water). Everything important
+       sits inside the middle 80% so phones can round or crop the corners. -->
+  <rect width="512" height="512" fill="#ffd9a0"/>
+  <rect y="300" width="512" height="212" fill="#8fd3e3"/>
+  <circle cx="256" cy="300" r="150" fill="#fff1c9"/>
+  <rect y="300" width="512" height="212" fill="#8fd3e3"/>
+  <ellipse cx="256" cy="388" rx="190" ry="58" fill="#7cc6d8"/>
+  <path d="M256 388 L330 336 A180 54 0 1 1 296 332 Z" fill="#4cb062"/>
+  <g transform="translate(131 150) scale(2.5)">
+    <ellipse cx="33" cy="87" rx="12" ry="4.5" fill="#f08a3c"/>
+    <ellipse cx="67" cy="87" rx="12" ry="4.5" fill="#f08a3c"/>
+    <ellipse cx="45" cy="7" rx="4.5" ry="6.5" fill="#ffd84d" transform="rotate(-22 45 7)"/>
+    <ellipse cx="54" cy="6" rx="4.5" ry="6.5" fill="#ffd84d" transform="rotate(18 54 6)"/>
+    <ellipse cx="15" cy="62" rx="8" ry="14" fill="#f5c12e" transform="rotate(14 15 62)"/>
+    <ellipse cx="85" cy="62" rx="8" ry="14" fill="#f5c12e" transform="rotate(-14 85 62)"/>
+    <ellipse cx="50" cy="63" rx="35" ry="25" fill="#ffd84d"/>
+    <circle cx="50" cy="33" r="27" fill="#ffd84d"/>
+    <ellipse cx="50" cy="72" rx="20" ry="12" fill="#fff0a6"/>
+    <circle cx="37" cy="29" r="9.5" fill="#ffffff"/>
+    <circle cx="63" cy="29" r="9.5" fill="#ffffff"/>
+    <circle cx="38.5" cy="30.5" r="5" fill="#2b2440"/>
+    <circle cx="64.5" cy="30.5" r="5" fill="#2b2440"/>
+    <circle cx="40.2" cy="28.4" r="1.7" fill="#ffffff"/>
+    <circle cx="66.2" cy="28.4" r="1.7" fill="#ffffff"/>
+    <ellipse cx="25" cy="43" rx="6" ry="3.8" fill="#ff9aa2" opacity="0.85"/>
+    <ellipse cx="75" cy="43" rx="6" ry="3.8" fill="#ff9aa2" opacity="0.85"/>
+    <ellipse cx="50" cy="45" rx="11.5" ry="6.5" fill="#ff8a3c"/>
+    <path d="M41 45 Q50 49 59 45" fill="none" stroke="#c9601a" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>

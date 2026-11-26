@@ -4,7 +4,26 @@
   --bg: #fff7ec;
   --text: #2b2440;
   --muted: #6b6280;
-  --water: #cdeef5;
+  --surface: #ffffff;
+  --border: #e3dccf;
+
+  --here: #1f9e89;       /* teal: right, done (always with a check mark) */
+  --here-ink: #12705f;   /* darker teal, for text on white */
+  --go: #ff8a5c;         /* orange: the thing to press next */
+  --on-go: #2b2440;      /* text on orange: dark in both modes (white is too faint) */
+  --star: #ffb627;
+  --words: #7461de;      /* purple: the Sounds group, and links */
+  --words-ink: #5644c4;  /* darker, for text on white */
+  --numbers: #ff8a5c;    /* orange: the Numbers group */
+  --numbers-ink: #b8481a;
+  --water: #cdeef5;      /* the pond */
+  --pad: #4cb062;        /* a lily pad */
+  --pad-edge: #3a9a55;
+  --bank: #d9c7a3;
+
+  /* Colors that are the same in light and dark mode. */
+  --white: #ffffff;      /* text and marks on a strong color */
+  --blush: #ff9aa2;      /* the pink flower on a lily pad */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -12,17 +31,41 @@
     --bg: #1d1a2b;
     --text: #f6f1ff;
     --muted: #b7aecb;
+    --surface: #2c2840;
+    --border: #463f60;
+    --here-ink: #5fd6bd;
+    --words-ink: #b4a8ff;
+    --numbers-ink: #ffa47f;
     --water: #22405a;
+    --bank: #6b5b45;
   }
 }
 
-/* Andika: a font made for children learning to read. The files live in
-   this repo (assets/fonts, with its license), so nothing is fetched from
-   another site. */
+* {
+  box-sizing: border-box;
+}
+
+/* Keyboard focus: a clear ring on whatever is focused, for anyone using a
+   keyboard or a switch instead of a finger. (A tap doesn't show it.) */
+:focus-visible {
+  outline: 3px solid var(--words-ink);
+  outline-offset: 2px;
+}
+
+/* Anything hidden stays hidden, even if its own rule sets display. */
+[hidden] {
+  display: none !important;
+}
+
+/* Andika: a font made for children learning to read, with the "a" and "g"
+   kids learn to write. The files live in this repo (assets/fonts, with its
+   license), so there are still no outside network requests. Weights above
+   700 use the bold file. */
 @font-face {
   font-family: "Andika";
   src: url("assets/fonts/andika-latin-400-normal.woff2") format("woff2");
   font-weight: 400;
+  font-style: normal;
   font-display: swap;
 }
 
@@ -30,36 +73,1225 @@
   font-family: "Andika";
   src: url("assets/fonts/andika-latin-700-normal.woff2") format("woff2");
   font-weight: 700;
+  font-style: normal;
   font-display: swap;
 }
 
+html,
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: "Andika", ui-rounded, system-ui, sans-serif;
 }
 
-.hello {
-  min-height: 100dvh;
-  display: grid;
-  place-content: center;
-  justify-items: center;
+/* A quick double tap is two taps, not "zoom in". This covers every button
+   and tile on the page, so they don't need to say it again. */
+html {
+  touch-action: manipulation;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Andika", ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Buttons don't pick up the page font on their own. */
+button {
+  font-family: inherit;
+}
+
+/* ---------- Splash ---------- */
+
+/* The splash fades out by itself (CSS only), so it can never get stuck
+   over the app, even if the app's code fails to load. */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
+  background: var(--water);
+  pointer-events: none;
+  animation: splash-out 400ms ease 700ms forwards;
+}
+
+@keyframes splash-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.splash-duck {
+  width: 140px;
+}
+
+.splash-name {
+  margin: 0;
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+/* Shown only if the app's code didn't start (see the script in index.html). */
+.load-problem {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 110;
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 2px solid var(--go);
+  text-align: center;
+  font-weight: 700;
+}
+
+/* ---------- Page layout ---------- */
+
+.app {
+  max-width: 440px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  padding: max(8px, env(safe-area-inset-top)) 16px max(12px, env(safe-area-inset-bottom));
+}
+
+.top {
   text-align: center;
 }
 
-.hello-frog {
-  width: 120px;
+.top h1 {
+  font-size: 1.6rem;
+  margin: 4px 0 2px;
 }
 
-.hello h1 {
-  margin: 0;
-  font-size: 2.25rem;
-}
-
-.hello p {
-  margin: 0;
+.legend {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 0 0 6px;
+  font-size: 0.8rem;
   color: var(--muted);
-  font-size: 1.125rem;
+}
+
+.game {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.loading {
+  margin: auto;
+  color: var(--muted);
+}
+
+/* The message line under a game (made by liveMessage in src/ui.js).
+   Games add a rule only for what differs. */
+.message {
+  min-height: 1.5em;
+  margin: 10px 0;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* ---------- Screens ---------- */
+
+.view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-top {
+  position: relative;
+}
+
+/* The title row is as tall as the back button, so the legend sits below it. */
+.game-top h1 {
+  margin: 0 0 4px;
+  line-height: 48px;
+}
+
+/* Back button: a 48px circle in the top-left corner. */
+.back {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  color: var(--text);
+  font-size: 1.5rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.button {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 12px 20px;
+  min-height: 48px;
+  border-radius: 12px;
+  background: var(--go);
+  color: var(--on-go);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+/* ---------- Home: pick a puzzle ---------- */
+
+.home-top {
+  padding: 16px 0 8px;
+}
+
+.home-top h1 {
+  font-size: 2.2rem;
+}
+
+/* The app name with the frog beside it. */
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.brand-duck {
+  width: 52px;
+  height: auto;
+}
+
+/* The pond: lily pads in a strip of water, the duckling on today's pad. */
+.pond {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 4px;
+  margin: 8px 0 4px;
+  padding: 30px 10px 22px; /* room for the duckling above and numbers below */
+  border-radius: 18px;
+  background: var(--water);
+}
+
+.pad {
+  position: relative;
+  width: 38px;
+  height: 24px;
+  border-radius: 50%;
+  /* A lily pad: a green circle with a notch cut out. */
+  background: conic-gradient(from 150deg, transparent 0 34deg, var(--pad) 34deg);
+}
+
+.pad-bank {
+  border-radius: 10px;
+  background: var(--bank);
+}
+
+/* Pads already visited wear a small flower. */
+.pad-visited::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 9px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--blush);
+  box-shadow: 0 0 0 2px var(--white);
+}
+
+/* The next pad: a dashed ring, "hop here today". */
+.pad-next {
+  box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--star);
+}
+
+.pad-ahead {
+  opacity: 0.55;
+}
+
+.pond-duck {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  width: 40px;
+  transform: translateX(-50%);
+}
+
+.pond-duck-hop {
+  animation: pad-hop 700ms ease-out;
+}
+
+@keyframes pad-hop {
+  0% { transform: translate(-150%, 0); }
+  50% { transform: translate(-100%, -22px); }
+  100% { transform: translate(-50%, 0); }
+}
+
+.pad-number {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -18px;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.pond-caption {
+  margin: 4px 0 4px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 0 0 16px;
+}
+
+.group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 8px;
+  font-size: 1.25rem;
+}
+
+.group-title::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+}
+
+/* A game's card: a picture first, since the player doesn't read yet. It
+   wears its group's color (--kind). */
+.card {
+  min-height: 132px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 8px 10px;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 2px solid var(--kind);
+  box-shadow: 0 4px 0 var(--kind);
+  color: var(--text);
+  text-decoration: none;
+  text-align: center;
+}
+
+.card:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--kind);
+}
+
+.card-name {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+/* Small drawings on each card, made from shapes (no image files). */
+.card-art {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.gu-summary {
+  margin: 4px 0 0;
+  text-align: center;
+  font-weight: 700;
+}
+
+.gu-level {
+  margin: 6px 0 0;
+  text-align: center;
+  color: var(--muted);
+}
+
+.gu-heading {
+  margin: 18px 0 8px;
+  font-size: 1.1rem;
+}
+
+/* 4 rows of 7 days, with weekday letters on top. */
+.gu-weeks {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.gu-weekday {
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.gu-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 0;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  line-height: 1.2;
+}
+
+/* Played days: teal, and a count with a check, so it's not color alone. */
+.gu-day-played {
+  border-color: var(--here);
+  background: color-mix(in srgb, var(--here) 18%, var(--surface));
+}
+
+.gu-today {
+  box-shadow: 0 0 0 2px var(--text);
+}
+
+.gu-date {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.gu-count {
+  font-weight: 800;
+}
+
+.gu-games {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gu-game {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 2px;
+  border-bottom: 1px solid var(--border);
+}
+
+.gu-times {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.gu-start-over {
+  margin: 24px auto 0;
+  min-width: 160px;
+}
+
+.gu-confirm {
+  margin-top: 20px;
+  padding: 12px;
+  border: 2px solid var(--numbers-ink);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.gu-confirm p {
+  margin: 0 0 12px;
+}
+
+.gu-reset {
+  border-color: var(--numbers-ink);
+  color: var(--numbers-ink);
+}
+
+/* ---------- Shared buttons ---------- */
+
+.plain-button {
+  min-height: 52px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.wiggle {
+  animation: wiggle 300ms ease-in-out;
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+/* ---------- End of the day ---------- */
+
+/* A card in the middle of the screen, over the finished puzzle, so it is
+   always seen without scrolling. */
+.done {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(29, 26, 43, 0.35);
+  text-align: center;
+}
+
+.done-card {
+  width: 100%;
+  max-width: 340px;
+  padding: 24px 20px 16px;
+  border-radius: 24px;
+  background: var(--surface);
+  border: 3px solid var(--star);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  animation: card-in 300ms ease-out;
+}
+
+.done-duck {
+  width: 96px;
+  height: auto;
+  animation: star 700ms ease-out;
+}
+
+.done-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin: 6px 0 2px;
+}
+
+@keyframes card-in {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.done-hop {
+  margin: 2px 0 6px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--numbers-ink);
+}
+
+/* Falling stars across the whole screen. They can't be tapped, so they
+   never block a button. Skipped for phones set to reduce motion. */
+.confetti {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -40px;
+  animation-name: fall;
+  animation-timing-function: ease-in;
+  animation-fill-mode: forwards;
+}
+
+@keyframes fall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translateY(110vh) rotate(540deg); opacity: 0; }
+}
+
+@keyframes star {
+  0% { transform: scale(0) rotate(-90deg); opacity: 0; }
+  70% { transform: scale(1.25) rotate(10deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash {
+    animation: splash-out 1ms linear 300ms forwards;
+  }
+
+  .wiggle,
+.pond-duck-hop,
+.done-card,
+.done-duck {
+    animation: none;
+  }
+}
+
+/* The wrapped gift on the celebration card. */
+.gift {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 8px auto 12px;
+  padding: 12px 18px;
+  border: 3px dashed var(--star);
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.gift-box {
+  font-size: 4rem;
+  line-height: 1.1;
+  animation: gift-wobble 1.6s ease-in-out infinite;
+}
+
+@keyframes gift-wobble {
+  0%, 60%, 100% { transform: rotate(0); }
+  70% { transform: rotate(-8deg); }
+  85% { transform: rotate(8deg); }
+}
+
+.gift-sticker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 8px 0 12px;
+  font-weight: 800;
+}
+
+.gift-picture {
+  font-size: 5rem;
+  line-height: 1.1;
+  animation: gift-pop 500ms ease-out;
+}
+
+@keyframes gift-pop {
+  0% { transform: scale(0.2); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gift-box,
+.gift-picture { animation: none; }
+}
+
+/* A sticker: the picture with a white edge all the way around and a soft
+   shadow, like a die-cut sticker, turned a little (--tilt). */
+.sticker-art {
+  display: inline-block;
+  line-height: 1;
+  transform: rotate(var(--tilt, 0deg));
+  filter:
+    drop-shadow(2px 0 0 var(--white)) drop-shadow(-2px 0 0 var(--white))
+    drop-shadow(0 2px 0 var(--white)) drop-shadow(0 -2px 0 var(--white))
+    drop-shadow(0 2px 2px rgb(0 0 0 / 0.28));
+}
+
+.sb-count {
+  margin: 4px 0 10px;
+  text-align: center;
+  font-weight: 700;
+}
+
+/* One page of the album: a card in a soft color (set per page below). */
+.sb-album {
+  --page: var(--words);
+  margin: 0 0 14px;
+  padding: 10px 12px 14px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--page) 20%, var(--surface));
+  border: 2px solid color-mix(in srgb, var(--page) 45%, var(--surface));
+}
+
+.sb-album-0 { --page: var(--pad); }
+.sb-album-1 { --page: var(--numbers); }
+.sb-album-2 { --page: var(--water); }
+.sb-album-3 { --page: var(--star); }
+.sb-album-4 { --page: var(--blush); }
+.sb-album-5 { --page: var(--words); }
+.sb-album-6 { --page: var(--here); }
+.sb-album-7 { --page: var(--go); }
+
+/* The covers: a tile for each page, two across. Each uses its page's color. */
+.sb-covers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.sb-cover {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-height: 48px;
+  padding: 10px 6px 12px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--page) 20%, var(--surface));
+  border: 2px solid color-mix(in srgb, var(--page) 45%, var(--surface));
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.sb-cover-name {
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.sb-taste {
+  display: flex;
+  gap: 8px;
+  font-size: 1.7rem;
+}
+
+.sb-pale {
+  filter: brightness(0) opacity(0.13);
+}
+
+/* The page with the newest sticker: a gold ring. */
+.sb-cover-new {
+  border-color: var(--star);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--star) 45%, transparent);
+}
+
+.sb-back {
+  margin: 0 0 10px;
+}
+
+.sb-page {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 2px 8px;
+  font-size: 1.15rem;
+}
+
+/* "3 of 15" in a pill; a full page gets a gold star. */
+.sb-have {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.sb-have-all {
+  background: var(--star);
+  color: var(--on-go);
+}
+
+.sb-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px 4px;
+}
+
+.sb-sticker {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  font-size: 2.3rem;
+}
+
+/* Not collected yet: a pale outline of the sticker to come, lying flat. */
+.sb-empty .sticker-art {
+  transform: none;
+  filter: brightness(0) opacity(0.13);
+}
+
+/* A shiny sticker (a second copy, won after the book is full): a gold edge
+   in place of the white one. */
+.sb-shiny .sticker-art,
+.sticker-shiny {
+  filter:
+    drop-shadow(2px 0 0 var(--star)) drop-shadow(-2px 0 0 var(--star))
+    drop-shadow(0 2px 0 var(--star)) drop-shadow(0 -2px 0 var(--star))
+    drop-shadow(0 2px 3px rgb(0 0 0 / 0.3));
+}
+
+/* A rainbow sticker (a third copy, won after every one is shiny): an edge
+   in rainbow colors that follows the sticker's shape. The picture and its
+   edge are one drawing, made by rainbowArt in src/app.js. */
+.rainbow-art {
+  width: 1.6em;
+  height: 1.6em;
+  background: center / contain no-repeat;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.3));
+}
+
+/* The newest sticker wiggles once and sits on a gold glow. */
+.sb-new {
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--star) 55%, transparent) 0 45%, transparent 70%);
+}
+
+.sb-new .sticker-art { animation: sticker-new 900ms ease-out; }
+
+@keyframes sticker-new {
+  0% { transform: scale(0.3) rotate(-25deg); }
+  60% { transform: scale(1.25) rotate(8deg); }
+  100% { transform: scale(1) rotate(var(--tilt, 0deg)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-new .sticker-art { animation: none; }
+}
+
+/* ---------- Today's set (home screen) ---------- */
+
+.today {
+  margin: 4px 0 14px;
+  padding: 12px;
+  border: 2px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.today-title {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+/* The last 7 days, under today's games: one small button each. */
+.past-label {
+  margin: 12px 0 4px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.past-days {
+  display: flex;
+  gap: 4px;
+}
+
+.past-day {
+  flex: 1;
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.past-day[aria-current] {
+  border-color: var(--words-ink);
+  color: var(--words-ink);
+}
+
+.past-day-done {
+  font-size: 0.75rem;
+  color: var(--go);
+}
+
+.today-count {
+  margin: 2px 0 8px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+/* Grown-up page: a puzzle's level and how it's going, under its name. */
+.gu-about {
+  display: flex;
+  flex-direction: column;
+}
+
+.gu-note {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.gu-note-practice {
+  color: var(--numbers-ink);
+  font-weight: 700;
+}
+
+/* ---------- Tablets (iPad) ---------- */
+/* The app is laid out for a phone: one column, at most 440px wide. On a
+   tablet held upright, the whole column is shown bigger, so it fills more
+   of the screen instead of sitting small in the middle. */
+@media (min-width: 700px) and (min-height: 900px) {
+  .app,
+.done-card {
+    zoom: 1.3; /* bigger than this and the tallest puzzles no longer fit */
+  }
+
+  .app {
+    min-height: calc(100dvh / 1.3); /* still exactly one screen tall after zooming */
+  }
+}
+
+/* ---------- Little Pond's own pieces ---------- */
+
+/* A plain link on the home screen (the sticker book, back to today). */
+.text-link {
+  display: block;
+  padding: 12px 16px; /* a 48px tap target */
+  text-align: center;
+  color: var(--words-ink);
+  font-weight: 700;
+}
+
+/* Shown to a grown-up when the phone has no voice to read aloud. */
+.no-voice {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border: 2px solid var(--numbers-ink);
+  border-radius: 14px;
+  background: var(--surface);
+  font-weight: 700;
+}
+
+.today-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.today .cards {
+  padding: 0;
+}
+
+/* The groups. Each sets its own color (--kind) and text color on cream
+   (--kind-ink), and has its own shape beside its title, so it isn't color
+   alone: a circle for Numbers, a diamond for Sounds. */
+.kind-numbers { --kind: var(--numbers); --kind-ink: var(--numbers-ink); }
+.kind-sounds { --kind: var(--words); --kind-ink: var(--words-ink); }
+
+.group-title { color: var(--kind-ink); }
+.group-title::before { background: var(--kind); }
+.kind-numbers .group-title::before { border-radius: 50%; }
+.kind-sounds .group-title::before { transform: rotate(45deg); border-radius: 3px; }
+
+.card-status {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--kind-ink);
+}
+
+/* The next game to play stands out with a gold ring. */
+.card-next {
+  outline: 4px solid var(--star);
+  outline-offset: 3px;
+}
+
+/* A finished game: teal, with a check mark in its status. */
+.card-done {
+  border-color: var(--here);
+  box-shadow: 0 4px 0 var(--here);
+}
+
+.card-done .card-status {
+  color: var(--here-ink);
+}
+
+/* How Many's card: three ducklings in a row. */
+.art-ducks {
+  display: flex;
+  gap: 2px;
+}
+
+.art-ducks img {
+  width: 34px;
+}
+
+/* "All games": closed until tapped. */
+.all-games > summary {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--words-ink);
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+}
+
+.all-games > summary::-webkit-details-marker { display: none; }
+.all-games > summary::after { content: "▾"; }
+.all-games[open] > summary::after { content: "▴"; }
+
+/* The bottom of the home screen: for grown-ups, and Refresh. Quiet, but
+   easy to tap. */
+.grown-up-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 20px 0 8px;
+}
+
+.quiet-button {
+  min-height: 48px;
+  padding: 0 18px;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  /* A long press must not select the words or open the phone's menu. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* While it's held, the button fills from the left: 2 seconds to full. */
+.hold-button {
+  background: linear-gradient(to right, var(--border) 50%, transparent 50%) right / 200% 100%;
+}
+
+.hold-button.holding {
+  background-position: left;
+  transition: background-position 2s linear;
+}
+
+.gu-confirm .plain-button {
+  margin: 0 4px;
+  padding: 0 14px;
+}
+
+.done-hop:empty {
+  display: none;
+}
+
+/* ---------- A game's screen (src/scene.js) ---------- */
+
+.scene {
+  gap: 8px;
+}
+
+/* The speaker button and the round dots. */
+.scene-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Says the line again. Big, because it is the player's way to ask "what?" */
+.speaker {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border: 3px solid var(--go);
+  border-radius: 50%;
+  background: var(--surface);
+  font-size: 1.8rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--go);
+}
+
+.speaker:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--go);
+}
+
+.dots {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* One dot per round: an empty ring, a gold ring for now, teal with a check when done. */
+.dot {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 3px solid var(--border);
+  border-radius: 50%;
+  color: var(--white);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.dot-now {
+  border-color: var(--star);
+}
+
+.dot-done {
+  border-color: var(--here);
+  background: var(--here);
+}
+
+/* The spoken line in small print, for a grown-up sitting alongside. */
+.scene-line {
+  margin: 0;
+  text-align: center;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.scene-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 12px;
+}
+
+/* A big lily pad on the water, with ducklings sitting on it. */
+.big-pad {
+  flex: 0 1 270px;
+  min-height: 190px;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  gap: 6px 10px;
+  padding: 18px 22px;
+  border-radius: 28px;
+  background:
+    radial-gradient(ellipse 46% 40% at 50% 52%, var(--pad) 98%, transparent 100%),
+    radial-gradient(ellipse 48% 42% at 50% 55%, var(--pad-edge) 98%, transparent 100%),
+    var(--water);
+}
+
+.duckling {
+  position: relative;
+  width: 72px;
+  cursor: pointer;
+}
+
+/* More than 5: smaller ducklings, in rows of 5. */
+.big-pad-full {
+  padding: 18px 8px;
+  gap: 4px 6px;
+}
+
+.big-pad-full .duckling {
+  width: 54px;
+}
+
+.duckling img {
+  display: block;
+  width: 100%;
+}
+
+/* The number a duckling gets when it's tapped to count. */
+.count-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--words);
+  color: var(--white);
+  font-weight: 800;
+  box-shadow: 0 0 0 2px var(--white);
+}
+
+/* The answer cards: dots, with the numeral beside them. */
+.choices {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.choice {
+  position: relative;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 4px;
+  border: 3px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--border);
+}
+
+.choice:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--border);
+}
+
+/* Rows of 5, like the fingers of a hand. */
+.choice-dots {
+  width: 80px; /* 5 dots and the gaps between them */
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  gap: 5px;
+  min-height: 29px;
+}
+
+.choice-dots i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--numbers);
+}
+
+.choice-number {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* The right answer: teal, with a check mark in its corner. */
+.choice-right {
+  border-color: var(--here);
+  box-shadow: 0 4px 0 var(--here);
+}
+
+.choice-right::after {
+  content: "✓";
+  position: absolute;
+  top: -10px;
+  right: -8px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--here);
+  color: var(--white);
+  font-weight: 800;
+}
+
+/* The button on the end-of-game card: big enough for a small finger. */
+.done-card .button {
+  min-height: 64px;
+  min-width: 160px;
+  padding: 18px 24px;
+  font-size: 1.2rem;
 }

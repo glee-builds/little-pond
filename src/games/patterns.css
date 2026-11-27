@@ -5,8 +5,8 @@
   display: grid;
   grid-template-columns: repeat(var(--columns), minmax(0, 72px));
   justify-content: center;
-  gap: 10px 8px;
-  padding: 16px 10px;
+  gap: 4px;
+  padding: 16px 8px;
   border-radius: 28px;
   background: var(--water);
 }
@@ -28,11 +28,12 @@
 /* The gap: an empty outlined box, waiting for what comes next. */
 .pat-slot {
   border: 3px dashed var(--text);
-  border-radius: 16px;
+  border-radius: 25%;
   background: var(--surface);
   color: var(--muted);
-  font-size: 2rem;
+  font-size: 1.25rem; /* small enough that the box stays square when a long row shrinks it */
   font-weight: 800;
+  overflow: hidden;
 }
 
 /* Filled: a solid teal edge (the right card also gets its check mark). */

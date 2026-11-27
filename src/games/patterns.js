@@ -119,8 +119,8 @@ export function rules() {
     draw(stage, round, answer) {
       const row = make('div', 'pat-row');
       const cells = round.row.length + 1;
-      // Up to 5 fit in one line; more wrap onto two even lines, read left to right.
-      row.style.setProperty('--columns', cells <= 5 ? cells : Math.ceil(cells / 2));
+      // Always one line, so the pattern reads straight across; long rows make each thing smaller.
+      row.style.setProperty('--columns', cells);
       for (const kind of round.row) row.append(picture(kind, 'pat-thing'));
       const slot = make('span', 'pat-thing pat-slot', '?');
       row.insertBefore(slot, row.children[round.gap] ?? null);

@@ -1,10 +1,11 @@
-// Tests for src/games/slide.js. Run all tests with: node --test
+// Tests for src/games/slide.js and its word list (data/words.json).
+// Run all tests with: node --test
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { generate, check, verify, usable, isStretchy, ROUNDS } from '../src/games/slide.js';
-import { names } from '../src/sounds.js';
+import { names, LETTERS } from '../src/sounds.js';
 import { seedFor } from '../src/seed.js';
 import { everyDay, assertValid } from './helpers.js';
 
@@ -13,6 +14,26 @@ const ALL = [...'abcdefghijklmnopqrstuvwxyz'];
 // Some letters recorded: enough for 9 words (bag, bat, bug, bus, sun, mom, man, nut, tub), 3 of them stretchy.
 const SOME = [...'abgmnostu'];
 const byWord = (word) => WORDS.find((entry) => entry.word === word);
+
+test('the word list is well-formed', () => {
+  const one = new Intl.Segmenter('en', { granularity: 'grapheme' });
+  for (const { word, picture, stretchy, also = [] } of WORDS) {
+    // Consonant, short vowel, consonant, one letter for each sound.
+    assert.match(word, /^[b-df-hj-np-tv-z][aeiou][b-df-hj-np-tv-z]$/, word);
+    assert.equal(stretchy, isStretchy(word), `${word}: stretchy`);
+    assert.equal([...one.segment(picture)].length, 1, `${word}: one emoji`);
+    assert.match(picture, /\p{Extended_Pictographic}|⃣/u, `${word}: an emoji`);
+    for (const name of also) assert.match(name, /^[a-z]+$/, `${word}: also "${name}"`);
+  }
+  assert.equal(new Set(WORDS.map(({ word }) => word)).size, WORDS.length, 'a word comes twice');
+  assert.equal(new Set(WORDS.map(({ picture }) => picture)).size, WORDS.length, 'a picture comes twice');
+  assert.ok(WORDS.length >= 30);
+});
+
+test('all 26 letters can be recorded, each with a word for its sound', () => {
+  assert.deepEqual(Object.keys(LETTERS), ALL);
+  for (const [letter, word] of Object.entries(LETTERS)) assert.ok(word.includes(letter), `${letter} as in ${word}`);
+});
 
 test('every day for two years, at every level, each round can be answered', () => {
   everyDay((key) => {

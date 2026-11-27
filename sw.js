@@ -56,8 +56,6 @@ const FILES = [
   'src/games/slide.js',
   'src/games/sort.css',
   'src/games/sort.js',
-  'src/games/sounds.css',
-  'src/games/sounds.js',
   'data/words.json',
   'assets/apple-touch-icon.png',
   'assets/duck.svg',

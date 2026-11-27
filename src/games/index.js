@@ -18,5 +18,4 @@ export const NAMES = [
   'match-the-number',
   'shapes',
   'slide',
-  'sounds',
 ];

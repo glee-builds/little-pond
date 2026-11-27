@@ -35,3 +35,11 @@ test('the list has no file twice, and includes the app itself', () => {
   assert.ok(listed.includes('./'));
   assert.ok(listed.includes('index.html'));
 });
+
+// The owner's other apps share this web address, so their caches are in the same
+// browser storage. The activate step may only delete caches with this app's prefix.
+test('sw.js deletes only old caches with its own prefix', () => {
+  assert.match(sw, /const PREFIX = 'little-pond-';/);
+  assert.match(sw, /const CACHE = PREFIX \+ 'v1';/);
+  assert.ok(sw.includes('names.filter((name) => name.startsWith(PREFIX) && name !== CACHE)'), 'the activate filter must check the prefix');
+});

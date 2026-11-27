@@ -12,7 +12,9 @@
 // When you add a file the app needs (a new game, a data file, an image),
 // add it to FILES. tests/offline.test.js fails if one is missing.
 
-const CACHE = 'little-pond-v1';
+// The owner's other apps share this web address, so their caches live alongside ours.
+const PREFIX = 'little-pond-';
+const CACHE = PREFIX + 'v1';
 
 // Every file the app needs, relative to this file. './' is the app itself.
 const FILES = [
@@ -87,7 +89,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((names) => Promise.all(names.filter((name) => name !== CACHE).map((name) => caches.delete(name))))
+      .then((names) => Promise.all(names.filter((name) => name.startsWith(PREFIX) && name !== CACHE).map((name) => caches.delete(name))))
       .then(() => self.clients.claim()),
   );
 });

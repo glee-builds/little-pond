@@ -9,7 +9,7 @@
 
 import { createRandom } from '../seed.js';
 import { make, button } from '../ui.js';
-import { DRAG_START, pictureCards, playRounds } from '../scene.js';
+import { DRAG_START, across, pictureCards, playRounds } from '../scene.js';
 import { speak } from '../voice.js';
 import { ENOUGH, loadWords, names, recorded, play } from '../sounds.js';
 
@@ -93,9 +93,11 @@ export function render(container, puzzle, onDone, session) {
       cards.sleep();
 
       let stop = 0;
+      let at = 0; // how far along the duckling is, 0 to 1
       let over = false; // the round has been answered
       let sounding = Promise.resolve(); // done when the last letter's sound ends
       const show = (place) => {
+        at = place;
         duck.style.setProperty('--at', place);
         tiles.forEach((tile, i) => tile.classList.toggle('sld-lit', i === stop - 1 || stop === END));
       };
@@ -118,10 +120,12 @@ export function render(container, puzzle, onDone, session) {
       }
 
       // Slide with a finger, or tap the duckling to hop to the next stop (after the end, back to the start).
-      let from = null; // while a finger is down: where it landed, and where on the duckling
+      // Everything is a part of the track's width, never pixels, so it is right at any zoom (tablets, styles.css).
+      const room = () => 1 - duck.getBoundingClientRect().width / track.getBoundingClientRect().width; // how far the duckling can go
+      let from = null; // while a finger is down: where it landed, and how far along the track from the duckling's left edge
       let slid = false;
       duck.addEventListener('pointerdown', (event) => {
-        from = { x: event.clientX, grip: event.clientX - duck.getBoundingClientRect().left };
+        from = { x: event.clientX, grip: across(track, event.clientX) - at * room() };
         slid = false;
         try { duck.setPointerCapture(event.pointerId); } catch { /* fine without it */ }
       });
@@ -129,8 +133,7 @@ export function render(container, puzzle, onDone, session) {
         if (!from) return;
         if (Math.abs(event.clientX - from.x) >= DRAG_START) slid = true;
         if (!slid) return;
-        const { left, width } = track.getBoundingClientRect();
-        moveTo(Math.min(1, Math.max(0, (event.clientX - from.grip - left) / (width - duck.offsetWidth))));
+        moveTo(Math.min(1, Math.max(0, (across(track, event.clientX) - from.grip) / room())));
       });
       for (const type of ['pointerup', 'pointercancel']) duck.addEventListener(type, () => { from = null; });
       duck.addEventListener('click', () => {

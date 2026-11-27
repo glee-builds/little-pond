@@ -100,6 +100,25 @@ export const DRAG_START = 8; // pixels a finger must move before a tap becomes a
 // The thing that was tapped and is waiting for a tap on where it goes.
 let picked = null;
 
+/** How much CSS zoom (the tablet rule in styles.css) enlarges `node` on the screen. */
+function zoomOf(node) {
+  let zoom = 1;
+  for (let at = node; at; at = at.parentElement) zoom *= Number(getComputedStyle(at).zoom) || 1;
+  return zoom;
+}
+
+/**
+ * How far across `node` a pointer at `clientX` is: 0 at its left edge, 1 at
+ * its right. A pointer is always in screen pixels; under CSS zoom, old
+ * Safari measures a box in un-zoomed pixels and newer browsers in screen
+ * pixels, so `scale` is worked out from the box itself.
+ */
+export function across(node, clientX) {
+  const { left, width } = node.getBoundingClientRect();
+  const scale = (zoomOf(node) * node.offsetWidth) / width; // 1 where the box already counts the zoom
+  return (clientX / scale - left) / width;
+}
+
 function unpick() {
   picked?.item.classList.remove('picked');
   picked = null;
@@ -159,6 +178,8 @@ export function draggable(item, { targets, onDrop, canMove = () => true }) {
       drag.ghost = item.cloneNode(true);
       drag.ghost.classList.add('drag-ghost');
       drag.ghost.style.width = `${item.offsetWidth}px`;
+      // The copy sits outside the zoomed app, so it is told the zoom to look the size of what was picked up.
+      drag.ghost.style.setProperty('--zoom', zoomOf(item));
       document.body.append(drag.ghost);
       item.classList.add('lifted');
     }
@@ -206,6 +227,7 @@ export function bank(count, pads, onMove) {
       targets: () => pads,
       canMove: () => open,
       onDrop(i) {
+        if (duck.parentNode === pads[i]) return; // put back where it was: not a move
         pads[i].append(duck);
         onMove();
       },

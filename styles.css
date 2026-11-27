@@ -1400,7 +1400,7 @@ button {
   position: fixed;
   z-index: 50;
   margin: 0;
-  transform: translate(-50%, -70%) scale(1.1);
+  transform: translate(-50%, -70%) scale(calc(1.1 * var(--zoom, 1))); /* --zoom: set by draggable */
   filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.3));
   pointer-events: none;
 }

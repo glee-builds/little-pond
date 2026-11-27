@@ -3,7 +3,8 @@
 // The other tests check each game's rounds. This one checks the screens: it
 // starts the app, opens the home screen, every game (at every level), the
 // sticker book, and the grown-up page at phone size, and fails if a screen
-// doesn't draw, logs an error, or (for a game) doesn't fit the screen. It
+// doesn't draw, logs an error, or (for a game) doesn't fit the screen. Each
+// game is also opened at two iPad sizes, upright and sideways, to see it fits. It
 // plays each game to the end, with one miss, and leaves one halfway to see
 // that it picks up again. At the end it turns its web server off and opens
 // every screen again, to prove the app works with no internet.
@@ -25,6 +26,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const PHONE = { width: 375, height: 667 };
+const TABLETS = { 'iPad upright': { width: 768, height: 954 }, 'iPad sideways': { width: 1024, height: 698 } };
 const FIRST_DAY = [2026, 10, 13]; // year, month (0 = January), day
 const TYPES = {
   '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
@@ -187,7 +189,7 @@ const setProgress = (changes) => evaluate(`(() => {
   localStorage.setItem('little-pond.progress', JSON.stringify({ ...saved, ...${JSON.stringify(changes)} }));
 })()`);
 
-/** Open a screen and note a problem if it doesn't draw, logs an error, or (with `fits`) is taller than the phone. */
+/** Open a screen and note a problem if it doesn't draw, logs an error, or (with `fits`) is taller or wider than the screen. */
 async function checkScreen(label, address, { ready, fits = false, then }) {
   checked++;
   let problem = '';
@@ -195,8 +197,9 @@ async function checkScreen(label, address, { ready, fits = false, then }) {
     if (!await open(address, ready)) problem = 'did not draw';
     else {
       if (then) problem = (await then()) || '';
-      const over = await evaluate('document.documentElement.scrollHeight - innerHeight');
-      if (!problem && fits && over > 0) problem = `is ${over}px taller than the screen`;
+      const [tall, wide] = await evaluate('[document.documentElement.scrollHeight - innerHeight, document.documentElement.scrollWidth - innerWidth]');
+      if (!problem && fits && tall > 0) problem = `is ${tall}px taller than the screen`;
+      if (!problem && fits && wide > 0) problem = `is ${wide}px wider than the screen`;
     }
   } catch (error) {
     problem = `broke: ${String(error.message).split('\n')[0]}`;
@@ -269,6 +272,19 @@ try {
     }
     await checkScreen(`${game} (an earlier day)`, `?day=2026-11-12#${game}`, { ready: drawn(game), fits: true });
   }
+
+  // Tablets: every game, at its first and its top level, also fits an older iPad in Safari, upright and sideways.
+  for (const [tablet, size] of Object.entries(TABLETS)) {
+    await page('Emulation.setDeviceMetricsOverride', { ...size, deviceScaleFactor: 2, mobile: true });
+    for (const [game, { levels }] of Object.entries(GAMES)) {
+      for (const level of new Set([1, levels])) {
+        await setProgress({ finished: {}, levels: { [game]: { now: level, was: level, since: null } } });
+        await evaluate(`localStorage.removeItem('little-pond.half-done')`);
+        await checkScreen(`${game} (level ${level}, ${tablet})`, `#${game}`, { ready: drawn(game), fits: true });
+      }
+    }
+  }
+  await page('Emulation.setDeviceMetricsOverride', { ...PHONE, deviceScaleFactor: 2, mobile: true });
   if (ONLY) throw new Error('only one game was asked for');
 
   await checkScreen('Sticker book', '#stickers', { ready: 'document.querySelectorAll(".sb-cover").length === 32' });

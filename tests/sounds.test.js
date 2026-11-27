@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { generate, check, verify, usable, alike, ROUNDS } from '../src/games/sounds.js';
+import { generate, check, verify, usable, alike, clear, ROUNDS } from '../src/games/sounds.js';
 import { isStretchy } from '../src/games/slide.js';
 import { names, LETTERS } from '../src/sounds.js';
 import { seedFor } from '../src/seed.js';
@@ -18,11 +18,18 @@ const byWord = (word) => WORDS.find((entry) => entry.word === word);
 test('the word list is well-formed', () => {
   const one = new Intl.Segmenter('en', { granularity: 'grapheme' });
   for (const { word, picture, stretchy, also = [] } of WORDS) {
-    // Consonant, short vowel, consonant: one letter for each sound.
-    assert.match(word, /^[b-df-hj-np-tv-z][aeiou][b-df-hj-np-tv-z]$/, word);
+    if (word.length === 3) {
+      // For Slide: consonant, short vowel, consonant, one letter for each sound.
+      assert.match(word, /^[b-df-hj-np-tv-z][aeiou][b-df-hj-np-tv-z]$/, word);
+      assert.equal(stretchy, isStretchy(word), `${word}: stretchy`);
+    } else {
+      // Only for Sounds, so it must have one likely name.
+      assert.match(word, /^[a-z]+$/, word);
+      assert.equal(stretchy, undefined, `${word}: stretchy is only for three-letter words`);
+      assert.ok(clear({ word, also }), `${word}: a longer word is only there for Sounds, so it must be clear`);
+    }
     assert.equal([...one.segment(picture)].length, 1, `${word}: one emoji`);
     assert.match(picture, /\p{Extended_Pictographic}|⃣/u, `${word}: an emoji`);
-    assert.equal(stretchy, isStretchy(word), `${word}: stretchy`);
     for (const name of also) assert.match(name, /^[a-z]+$/, `${word}: also "${name}"`);
   }
   assert.equal(new Set(WORDS.map(({ word }) => word)).size, WORDS.length, 'a word comes twice');
@@ -43,6 +50,7 @@ test('every day for two years, at every level, each round can be answered', () =
         assertValid(verify(puzzle), `${key} level ${level}`);
         for (const { sound, word, choices } of puzzle.rounds) {
           assert.ok(letters.includes(sound), `${key}: "${sound}" is not recorded`);
+          assert.ok(clear(byWord(word)), `${key}: the picture for "${word}" might be called something else`);
           // Whatever the player calls a wrong picture, it starts with a clearly different sound.
           for (const choice of choices.filter((other) => other.word !== word)) {
             for (const name of names(byWord(choice.word))) assert.ok(!alike(name[0], sound), `${key}: ${name} starts like "${sound}"`);
@@ -64,8 +72,9 @@ test('level 1 has 2 pictures and level 2 has 3', () => {
   for (const level of [1, 2]) assert.ok(generate(seed, level, WORDS, ALL).rounds.every(({ choices }) => choices.length === level + 1));
 });
 
-test('only recorded letters that start a word can be asked', () => {
-  assert.deepEqual(usable(WORDS, [...'aeioxbm']).sort(), ['b', 'm']);
+test('only recorded letters that start a clear picture\'s word can be asked', () => {
+  // No clear picture starts with i, x, or v (🚐 "van" might be called "bus").
+  assert.deepEqual(usable(WORDS, [...'aeioxbmv']).sort(), ['a', 'b', 'e', 'm', 'o']);
   assert.equal(usable(WORDS, SOME).length, 8);
 });
 
@@ -80,4 +89,8 @@ test('verify catches a wrong picture that starts with the same sound', () => {
   const [round] = puzzle.rounds;
   round.choices.find((choice) => choice.word !== round.word).word = `${round.sound}ib`;
   assert.equal(verify(puzzle).ok, false);
+});
+
+test('enough sounds have a clear picture for the game to be played', () => {
+  assert.ok(usable(WORDS, ALL).length >= 8, `only ${usable(WORDS, ALL).join('')}`);
 });

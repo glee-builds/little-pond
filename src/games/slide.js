@@ -25,10 +25,10 @@ export const ROUNDS = 4;
 const STRETCHY = 'aeioufmnlrsvz';
 export const isStretchy = (word) => [...word].every((letter) => STRETCHY.includes(letter));
 
-/** The words that can be played: every letter has a recording. */
+/** The words that can be played: three letters, each with a recording. */
 export function usable(words, letters) {
   const have = new Set(letters);
-  return words.filter(({ word }) => [...word].every((letter) => have.has(letter)));
+  return words.filter(({ word }) => word.length === 3 && [...word].every((letter) => have.has(letter)));
 }
 
 // What the app hands to generate (after the seed and level), and whether there is enough to play.

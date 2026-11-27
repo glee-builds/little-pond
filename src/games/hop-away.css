@@ -24,6 +24,21 @@
   width: 56px;
 }
 
+/* 4 logs (16 to 20 ducklings): a little smaller, to fit a phone. */
+.hop-pond-full {
+  gap: 6px;
+  padding-top: 10px;
+}
+
+.hop-pond-full .hop-log {
+  min-height: 54px;
+  border-bottom-width: 10px;
+}
+
+.hop-pond-full .hop-log .duckling {
+  width: 50px;
+}
+
 /* In the water: small (and faded: .away in styles.css). */
 .hop-water {
   display: flex;

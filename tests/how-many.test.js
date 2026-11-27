@@ -8,7 +8,7 @@ import { everyDay, assertValid } from './helpers.js';
 
 test('every day for two years, at every level, each round can be answered', () => {
   everyDay((key) => {
-    for (const level of [1, 2, 3]) assertValid(verify(generate(seedFor(key, 'how-many'), level)), `${key} level ${level}`);
+    for (const level of [1, 2, 3, 4]) assertValid(verify(generate(seedFor(key, 'how-many'), level)), `${key} level ${level}`);
   });
 });
 
@@ -18,13 +18,13 @@ test('the same day and level give the same rounds', () => {
   assert.equal(generate(seed, 2).rounds.length, ROUNDS);
 });
 
-test('levels count to 3, to 5, and to 10', () => {
-  const most = (level) => {
-    let top = 0;
-    everyDay((key) => { for (const { count } of generate(seedFor(key, 'how-many'), level).rounds) top = Math.max(top, count); }, 60);
-    return top;
+test('levels count from 3 to 6, 5 to 10, 8 to 15, and 11 to 20', () => {
+  const counts = (level) => {
+    const all = [];
+    everyDay((key) => all.push(...generate(seedFor(key, 'how-many'), level).rounds.map(({ count }) => count)), 60);
+    return [Math.min(...all), Math.max(...all)];
   };
-  assert.deepEqual([most(1), most(2), most(3)], [3, 5, 10]);
+  assert.deepEqual([counts(1), counts(2), counts(3), counts(4)], [[3, 6], [5, 10], [8, 15], [11, 20]]);
 });
 
 test('only the card with the same number of dots is right', () => {

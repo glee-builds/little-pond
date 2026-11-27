@@ -19,6 +19,35 @@
   --duck: 48px;
 }
 
+/* Past 10: a ten (2 rows of 5) and the rest beside it, on every pad in the
+   round. Smaller ducklings, so 20 fit beside the numeral's room. */
+.mtn-ducks {
+  display: flex;
+  gap: 8px;
+}
+
+.mtn-teens {
+  padding: 6px;
+}
+
+.mtn-teens .rows-of-5 {
+  --duck: 24px;
+  gap: 3px;
+}
+
+.mtn-teens .mtn-tile {
+  width: 44px;
+  height: 44px;
+  font-size: 1.6rem;
+}
+
+/* The whole round reads the same on wider screens, with bigger ducklings. */
+@media (min-width: 440px) {
+  .mtn-teens .rows-of-5 {
+    --duck: 30px;
+  }
+}
+
 /* Where the numeral waits; it keeps its room when the numeral has gone. */
 .mtn-home {
   height: 92px;

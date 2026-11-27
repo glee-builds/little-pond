@@ -8,17 +8,17 @@
 
 import { createRandom } from '../seed.js';
 import { make, plural, range } from '../ui.js';
-import { ducklings, tapToCount, dotCards, nearChoices, playRounds } from '../scene.js';
+import { ducklings, tapToCount, dotCards, nearChoices } from '../scene.js';
 import { speak } from '../voice.js';
 
 export const meta = {
-  title: 'How Many', kind: 'numbers', levels: 3,
+  title: 'How Many', kind: 'numbers', levels: 4,
   art: '<span class="art-ducks"><img src="assets/duck.svg" alt=""><img src="assets/duck.svg" alt=""><img src="assets/duck.svg" alt=""></span>',
 };
 
 export const ROUNDS = 4;
 // The fewest and most ducklings at each level.
-const RANGES = [[1, 3], [1, 5], [4, 10]];
+const RANGES = [[3, 6], [5, 10], [8, 15], [11, 20]];
 
 
 /** The day's rounds: each is { count, choices }, with 3 choices close together. */
@@ -56,9 +56,10 @@ const COUNT_LINE = 'Tap each duckling. Count with me!';
 const ASK_LINE = 'How many ducklings?';
 const BEAT = 900; // time for the last number to be said before the question
 
-export function render(container, puzzle, onDone, session) {
+/** What playRounds needs to play these rounds, for the mixed game this is part of (src/mix.js). */
+export function rules() {
   let counted = false; // has every duckling in this round been tapped?
-  playRounds(container, puzzle, onDone, session, {
+  return {
     prompt: () => (counted ? ASK_LINE : COUNT_LINE),
     check,
     draw(stage, round, answer) {
@@ -79,5 +80,5 @@ export function render(container, puzzle, onDone, session) {
         return plural(round.count, 'duckling');
       };
     },
-  });
+  };
 }

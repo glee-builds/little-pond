@@ -8,8 +8,11 @@
   background: var(--water);
 }
 
-/* A slide pushes a pad; it doesn't scroll the page. */
+/* A slide pushes a pad; it doesn't scroll the page. Its ducklings sit in
+   rows of 5 on any screen, so up to 10 on a pad read at a glance. */
 .join-pond .long-pad {
+  display: grid;
+  grid-template-columns: repeat(5, auto);
   touch-action: none;
   transition: margin-top 500ms ease-in-out, border-radius 500ms ease-in-out;
 }

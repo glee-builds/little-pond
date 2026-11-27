@@ -3,15 +3,17 @@
 // Two groups of ducklings sit on two lily pads. The player pushes the pads
 // together (a slide or a tap), they become one group, and the answer cards
 // wake up: how many in all? The joined ducklings can be tapped to count.
-// At the top level it runs the other way: one group waits on the bank, and
-// the player splits it between two pads, any way that leaves neither empty.
+// At level 2 it runs the other way: one group waits on the bank, and the
+// player splits it between two pads, any way that leaves neither empty.
+// Level 3 joins again, past 10. Splitting stays at 10 or under: moving 20
+// ducklings one at a time would be a chore.
 // It builds adding as joining two groups, and the ways to make a number.
 // Nothing is written as a sum; the numbers are only said, and shown beside
 // the ducklings.
 
 import { createRandom } from '../seed.js';
 import { make, range } from '../ui.js';
-import { ducklings, tapToCount, dotCards, nearChoices, bank, playRounds } from '../scene.js';
+import { ducklings, tapToCount, dotCards, nearChoices, bank } from '../scene.js';
 
 const duckAt = (x) => `<image href="assets/duck.svg" x="${x}" y="6" width="24" height="22"/>`;
 const padAt = (x) => `<ellipse cx="${x}" cy="34" rx="30" ry="14" style="fill:var(--pad)"/>`;
@@ -22,29 +24,29 @@ export const meta = {
 };
 
 export const ROUNDS = 4;
-// Levels 1 and 2: the fewest and most ducklings in all. Level 3: the sizes of the group to split.
-const TOTALS = [[2, 5], [6, 10]];
-const WHOLES = [5, 10];
-const SPLIT = 3;
-
+// Each level: join (the fewest and most in all) or split (the sizes of the group to split).
+const LEVELS = [{ join: [4, 10] }, { split: [5, 10] }, { join: [11, 20] }];
+const GROUP = 10; // the most on one pad when joining
+const rule = (level) => LEVELS[level - 1] ?? LEVELS.at(-1);
 
 /**
- * The day's rounds. Levels 1 and 2: { a, b, choices }, two groups and 3
- * answer cards. Level 3: { whole }, a group to split, a different size
+ * The day's rounds. Joining: { a, b, choices }, two groups and 3
+ * answer cards. Splitting: { whole }, a group to split, a different size
  * every round, so no way of splitting one comes up twice in a day.
  */
 export function generate(seed, level = 1) {
   const random = createRandom(seed);
-  if (level >= SPLIT) {
-    return { level, rounds: random.shuffle(range(...WHOLES)).slice(0, ROUNDS).map((whole) => ({ whole })) };
+  const { join, split } = rule(level);
+  if (split) {
+    return { level, rounds: random.shuffle(range(...split)).slice(0, ROUNDS).map((whole) => ({ whole })) };
   }
-  const [low, high] = TOTALS[level - 1];
+  const [low, high] = join;
   const rounds = [];
   let last = 0;
   for (let i = 0; i < ROUNDS; i++) {
     // Never the same number in all twice in a row.
     const total = random.pick(range(low, high).filter((n) => n !== last));
-    const a = random.int(1, total - 1);
+    const a = random.int(Math.max(1, total - GROUP), Math.min(GROUP, total - 1));
     rounds.push({ a, b: total - a, choices: nearChoices(random, total, 1, high) });
     last = total;
   }
@@ -59,8 +61,8 @@ export const check = (round, answer) => (round.whole
 /** Confirm every round can be answered and is in range for its level. */
 export function verify(puzzle) {
   const problems = [];
-  const split = puzzle.level >= SPLIT;
-  const [low, high] = split ? WHOLES : TOTALS[puzzle.level - 1] ?? [];
+  const { join, split } = rule(puzzle.level);
+  const [low, high] = split ?? join;
   if (puzzle.rounds.length !== ROUNDS) problems.push(`${puzzle.rounds.length} rounds, not ${ROUNDS}`);
   puzzle.rounds.forEach((round, i) => {
     const say = (problem) => problems.push(`round ${i + 1}: ${problem}`);
@@ -74,6 +76,7 @@ export function verify(puzzle) {
     }
     const { a, b, choices = [] } = round;
     if (!(a >= 1 && b >= 1)) say('a pad is empty');
+    if (a > GROUP || b > GROUP) say(`a pad has more than ${GROUP}`);
     if (new Set(choices).size !== 3) say('the choices are not 3 different numbers');
     if (choices.filter((choice) => check(round, choice)).length !== 1) say('not exactly one right choice');
     if (choices.some((choice) => choice < 1 || choice > high)) say(`a choice is outside 1 to ${high}`);
@@ -134,10 +137,11 @@ function drawSplit(stage, round, answer) {
   };
 }
 
-export function render(container, puzzle, onDone, session) {
-  playRounds(container, puzzle, onDone, session, {
+/** What playRounds needs to play these rounds, for the mixed game this is part of (src/mix.js). */
+export function rules() {
+  return {
     prompt: (round) => (round.whole ? SPLIT_LINE : JOIN_LINE),
     check,
     draw: (stage, round, answer) => (round.whole ? drawSplit : drawJoin)(stage, round, answer),
-  });
+  };
 }

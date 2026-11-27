@@ -8,10 +8,10 @@
 
 import { createRandom } from '../seed.js';
 import { make, button, plural, range } from '../ui.js';
-import { ducklings, tapToCount, draggable, playRounds } from '../scene.js';
+import { ducklings, tapToCount, draggable } from '../scene.js';
 
 export const meta = {
-  title: 'Match the Number', kind: 'numbers', levels: 3, css: true,
+  title: 'Match the Number', kind: 'numbers', levels: 4, css: true,
   art: '<svg viewBox="0 0 120 52" width="120" height="52" aria-hidden="true">'
     + '<rect x="6" y="6" width="40" height="40" rx="10" style="fill:var(--surface);stroke:var(--numbers);stroke-width:3"/>'
     + '<text x="26" y="36" text-anchor="middle" style="font-size:28px;font-weight:800;fill:var(--text)">3</text>'
@@ -21,10 +21,11 @@ export const meta = {
 
 export const ROUNDS = 4;
 // The fewest and most ducklings at each level.
-const RANGES = [[1, 3], [1, 5], [1, 10]];
-const NEAR = 2; // at the top level, the other pads are within this of the answer
+const RANGES = [[1, 6], [1, 10], [5, 15], [10, 20]];
+const NEAR = 2; // from level NEAR_FROM, the other pads are within this of the answer
+const NEAR_FROM = 2;
 
-const isTop = (level) => level >= RANGES.length;
+const isNear = (level) => level >= NEAR_FROM;
 
 /** The day's rounds: each is { count, pads }, 3 different pads, one holding `count`. */
 export function generate(seed, level = 1) {
@@ -34,7 +35,7 @@ export function generate(seed, level = 1) {
   for (let i = 0; i < ROUNDS; i++) {
     // Never the same number twice in a row.
     const count = random.pick(range(low, high).filter((n) => n !== rounds.at(-1)?.count));
-    const others = range(low, high).filter((n) => n !== count && (!isTop(level) || Math.abs(n - count) <= NEAR));
+    const others = range(low, high).filter((n) => n !== count && (!isNear(level) || Math.abs(n - count) <= NEAR));
     rounds.push({ count, pads: random.shuffle([count, ...random.shuffle(others).slice(0, 2)]) });
   }
   return { level, rounds };
@@ -54,21 +55,26 @@ export function verify(puzzle) {
     if (pads.length !== 3 || new Set(pads).size !== 3) say('the pads are not 3 different numbers');
     if (pads.some((n) => !(n >= low && n <= high))) say(`a pad is outside ${low} to ${high}`);
     if (pads.filter((_, pad) => check(round, pad)).length !== 1) say('not exactly one right pad');
-    if (isTop(puzzle.level) && pads.some((n) => Math.abs(n - count) > NEAR)) say(`a pad is more than ${NEAR} from ${count}`);
+    if (isNear(puzzle.level) && pads.some((n) => Math.abs(n - count) > NEAR)) say(`a pad is more than ${NEAR} from ${count}`);
     if (i > 0 && count === puzzle.rounds[i - 1].count) say('the same number as the round before');
   });
   return { ok: problems.length === 0, problems };
 }
 
-export function render(container, puzzle, onDone, session) {
-  playRounds(container, puzzle, onDone, session, {
+/** What playRounds needs to play these rounds, for the mixed game this is part of (src/mix.js). */
+export function rules() {
+  return {
     prompt: ({ count }) => `Put the ${count} on the pad with ${plural(count, 'duckling')}.`,
     check,
     draw(stage, round, answer) {
       let over = false;
+      // Past 10, every pad in the round shows a ten (2 rows of 5) and the rest beside it.
+      const teens = Math.max(...round.pads) > 10;
       const pads = round.pads.map((count) => {
-        const pad = make('div', 'mtn-pad');
-        tapToCount(ducklings(count, pad.appendChild(make('div', 'rows-of-5'))));
+        const pad = make('div', `mtn-pad${teens ? ' mtn-teens' : ''}`);
+        const ducks = pad.appendChild(make('div', 'mtn-ducks'));
+        const blocks = count > 10 ? [10, count - 10] : [count];
+        tapToCount(blocks.flatMap((n) => ducklings(n, ducks.appendChild(make('div', 'rows-of-5')))));
         return pad;
       });
       const tile = button('mtn-tile', String(round.count));
@@ -85,5 +91,5 @@ export function render(container, puzzle, onDone, session) {
         return plural(round.count, 'duckling');
       };
     },
-  });
+  };
 }

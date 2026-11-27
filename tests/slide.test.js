@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { generate, check, verify, usable, isStretchy, ROUNDS } from '../src/games/slide.js';
+import { generate, check, verify, usable, isStretchy, ROUNDS, meta } from '../src/games/slide.js';
 import { names, LETTERS } from '../src/sounds.js';
 import { seedFor } from '../src/seed.js';
 import { everyDay, assertValid } from './helpers.js';
@@ -14,6 +14,7 @@ const ALL = [...'abcdefghijklmnopqrstuvwxyz'];
 // Some letters recorded: enough for 9 words (bag, bat, bug, bus, sun, mom, man, nut, tub), 3 of them stretchy.
 const SOME = [...'abgmnostu'];
 const byWord = (word) => WORDS.find((entry) => entry.word === word);
+const LEVELS = [1, 2, 3];
 
 test('the word list is well-formed', () => {
   const one = new Intl.Segmenter('en', { granularity: 'grapheme' });
@@ -36,8 +37,9 @@ test('all 26 letters can be recorded, each with a word for its sound', () => {
 });
 
 test('every day for two years, at every level, each round can be answered', () => {
+  assert.equal(meta.levels, LEVELS.length);
   everyDay((key) => {
-    for (const level of [1, 2]) {
+    for (const level of LEVELS) {
       for (const letters of [ALL, SOME]) {
         const puzzle = generate(seedFor(key, 'slide'), level, WORDS, letters);
         assertValid(verify(puzzle), `${key} level ${level}`);
@@ -65,12 +67,21 @@ test('only words whose letters are all recorded are used', () => {
   }, 60);
 });
 
-test('level 1 uses stretchy words, and fills up with others only when there are too few', () => {
+test('levels show 3 pictures, then 4, then 4 with one that starts like the word', () => {
+  let alike = 0;
   everyDay((key) => {
     const seed = seedFor(key, 'slide');
-    assert.ok(generate(seed, 1, WORDS, ALL).rounds.every(({ word }) => isStretchy(word)), key);
-    assert.equal(generate(seed, 1, WORDS, SOME).rounds.filter(({ word }) => isStretchy(word)).length, 3, key);
+    for (const level of LEVELS) {
+      for (const letters of [ALL, SOME]) {
+        for (const { word, choices } of generate(seed, level, WORDS, letters).rounds) {
+          assert.equal(choices.length, level === 1 ? 3 : 4, key);
+          if (level === 3 && choices.some((choice) => choice.word !== word && choice.word[0] === word[0])) alike++;
+        }
+      }
+    }
   }, 60);
+  // Most words, though not all, have another word in the list that starts like them.
+  assert.ok(alike > 60 * 2 * ROUNDS * 0.6, `only ${alike} top-level rounds have a picture that starts like the word`);
 });
 
 test('only the picture of the word is right', () => {

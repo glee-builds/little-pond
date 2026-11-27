@@ -13,7 +13,7 @@ export const setup = `
   wav.fill(128, 44); // silence, for 8-bit sound
   for (const letter of 'abcdefghijklmnopqrstuvwxyz') await save(letter, new Blob([wav], { type: 'audio/wav' }));`;
 
-export const ready = `Boolean(G.querySelector('.sld-duck')) && G.querySelectorAll('.choice').length === 3`;
+export const ready = `Boolean(G.querySelector('.sld-duck')) && G.querySelectorAll('.choice').length > 2`;
 
 // Slide the way a tap does: hop the duckling along until the pictures wake up.
 const slide = `for (let hops = 0; hops < 8 && G.querySelector('.choices-waiting'); hops++) { G.querySelector('.sld-duck').click(); await wait(600); }`;

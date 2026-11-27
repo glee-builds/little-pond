@@ -197,7 +197,8 @@ async function checkScreen(label, address, { ready, fits = false, then }) {
     if (!await open(address, ready)) problem = 'did not draw';
     else {
       if (then) problem = (await then()) || '';
-      const [tall, wide] = await evaluate('[document.documentElement.scrollHeight - innerHeight, document.documentElement.scrollWidth - innerWidth]');
+      // screen.width, not innerWidth: a phone's browser widens the page to fit whatever is too wide.
+      const [tall, wide] = await evaluate('[document.documentElement.scrollHeight - innerHeight, document.documentElement.scrollWidth - screen.width]');
       if (!problem && fits && tall > 0) problem = `is ${tall}px taller than the screen`;
       if (!problem && fits && wide > 0) problem = `is ${wide}px wider than the screen`;
     }
@@ -268,6 +269,22 @@ try {
           if (await evaluate(`document.getElementById('game-${game}').round && true`) !== true) return 'no round on screen';
           return extra ? inGame(game, extra) : '';
         },
+      });
+      // Every round fits, not only the first: a mixed game's rounds (src/mix.js) each look different.
+      await evaluate(`localStorage.removeItem('little-pond.half-done')`);
+      await checkScreen(`${game} (level ${level}, every round)`, `#${game}`, {
+        ready: drawn(game),
+        then: () => inGame(game, `
+          const tall = () => document.documentElement.scrollHeight - innerHeight;
+          for (let i = 1; G.round && !G.classList.contains('finished'); i++) {
+            if (tall() > 0) return \`round \${i} is \${tall()}px taller than the screen\`;
+            const cut = [...G.querySelectorAll('*')].find((node) => { const box = node.getBoundingClientRect(); return box.width && (box.left < -1 || box.right > screen.width + 1); });
+            if (cut) return \`round \${i}: .\${cut.className} runs off the side of the screen\`;
+            const before = G.round;
+            ${answer}
+            if (G.round === before && !G.classList.contains('finished')) return \`round \${i} did not move on\`;
+          }
+          return '';`),
       });
     }
     await checkScreen(`${game} (an earlier day)`, `?day=2026-11-12#${game}`, { ready: drawn(game), fits: true });

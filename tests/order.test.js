@@ -10,7 +10,7 @@ const today = (level) => generate(seedFor('2026-11-26', 'order'), level);
 
 test('every day for two years, at every level, each round can be lined up', () => {
   everyDay((key) => {
-    for (const level of [1, 2, 3]) assertValid(verify(generate(seedFor(key, 'order'), level)), `${key} level ${level}`);
+    for (const level of [1, 2, 3, 4]) assertValid(verify(generate(seedFor(key, 'order'), level)), `${key} level ${level}`);
   });
 });
 
@@ -19,13 +19,13 @@ test('the same day and level give the same rounds', () => {
   assert.equal(today(2).rounds.length, ROUNDS);
 });
 
-test('levels have 3, 4, and 5 ducklings, and only the top level asks for biggest first', () => {
-  const seen = [1, 2, 3].map((level) => {
+test('levels have 4, 4, 5, and 6 ducklings, and biggest first comes in at level 2', () => {
+  const seen = [1, 2, 3, 4].map((level) => {
     const rounds = [];
     everyDay((key) => rounds.push(...generate(seedFor(key, 'order'), level).rounds), 30);
     return { counts: [...new Set(rounds.map(({ sizes }) => sizes.length))], ways: new Set(rounds.map(({ down }) => down)).size };
   });
-  assert.deepEqual(seen, [{ counts: [3], ways: 1 }, { counts: [4], ways: 1 }, { counts: [5], ways: 2 }]);
+  assert.deepEqual(seen, [{ counts: [4], ways: 1 }, { counts: [4], ways: 2 }, { counts: [5], ways: 2 }, { counts: [6], ways: 2 }]);
 });
 
 test('only the order asked for is right', () => {
@@ -38,9 +38,9 @@ test('only the order asked for is right', () => {
 
 test('verify catches ducklings that start in order, and a missing size', () => {
   const sorted = today(1);
-  sorted.rounds[0].sizes = [1, 2, 3];
+  sorted.rounds[0].sizes = [1, 2, 3, 4];
   assert.equal(verify(sorted).ok, false);
   const twins = today(1);
-  twins.rounds[0].sizes = [2, 2, 1];
+  twins.rounds[0].sizes = [2, 2, 1, 4];
   assert.equal(verify(twins).ok, false);
 });

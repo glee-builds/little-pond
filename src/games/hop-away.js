@@ -8,7 +8,7 @@
 
 import { createRandom } from '../seed.js';
 import { make, button, plural, range } from '../ui.js';
-import { duckling, tapToCount, dotCards, nearChoices, playRounds } from '../scene.js';
+import { duckling, tapToCount, dotCards, nearChoices } from '../scene.js';
 
 export const meta = {
   title: 'Hop Away', kind: 'numbers', levels: 3, css: true,
@@ -18,9 +18,9 @@ export const meta = {
 export const ROUNDS = 4;
 // At each level: how many start on the log, how many hop away, and the fewest that must stay.
 const LEVELS = [
-  { start: [2, 5], away: [1, 4], keep: 1 },
-  { start: [4, 10], away: [1, 3], keep: 1 },
-  { start: [4, 10], away: [3, 10], keep: 0 },
+  { start: [4, 10], away: [1, 5], keep: 1 },
+  { start: [6, 15], away: [2, 8], keep: 0 },
+  { start: [10, 20], away: [3, 10], keep: 0 },
 ];
 
 const left = (round) => round.start - round.away;
@@ -65,15 +65,16 @@ const LINE = 'Some ducklings hop away. How many are left?';
 const STAGGER = 80; // each duckling hops a moment after the one before
 const HOP = 600;    // how long one hop takes (hop-away.css)
 
-export function render(container, puzzle, onDone, session) {
-  playRounds(container, puzzle, onDone, session, {
+/** What playRounds needs to play these rounds, for the mixed game this is part of (src/mix.js). */
+export function rules() {
+  return {
     prompt: () => LINE,
     check,
     draw(stage, round, answer) {
-      const pond = make('div', 'hop-pond');
-      const water = make('div', 'hop-water');
       // Logs of 5, like the rows of dots on the cards.
       const logs = range(1, Math.ceil(round.start / 5)).map(() => make('div', 'hop-log'));
+      const pond = make('div', `hop-pond${logs.length > 3 ? ' hop-pond-full' : ''}`);
+      const water = make('div', 'hop-water');
       const ducks = range(0, round.start - 1).map((i) => logs[Math.floor(i / 5)].appendChild(duckling()));
       pond.append(...logs, water);
 
@@ -100,5 +101,5 @@ export function render(container, puzzle, onDone, session) {
         return plural(left(round), 'duckling');
       };
     },
-  });
+  };
 }

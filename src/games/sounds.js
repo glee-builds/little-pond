@@ -22,10 +22,14 @@ export const ROUNDS = 4;
 const ALIKE = ['bp', 'dt', 'ckg', 'fv', 'sz', 'mn', 'wr'];
 export const alike = (a, b) => a === b || ALIKE.some((group) => group.includes(a) && group.includes(b));
 
-/** The sounds that can be asked: recorded letters that start a word in the list. */
+// A picture can be the answer only if every name the player might give it
+// starts with the same sound (🐏 is "ram", but also "sheep").
+export const clear = (entry) => names(entry).every((name) => alike(name[0], entry.word[0]));
+
+/** The sounds that can be asked: recorded letters that start a clear picture's word. */
 export function usable(words, letters) {
   const have = new Set(letters);
-  return [...new Set(words.map(({ word }) => word[0]))].filter((letter) => have.has(letter));
+  return [...new Set(words.filter(clear).map(({ word }) => word[0]))].filter((letter) => have.has(letter));
 }
 
 // What the app hands to generate (after the seed and level), and whether there is enough to play.
@@ -40,7 +44,7 @@ export const available = async () => usable(...await data()).length >= ENOUGH;
 export function generate(seed, level = 1, words = [], letters = []) {
   const random = createRandom(seed);
   const rounds = random.shuffle(usable(words, letters)).slice(0, ROUNDS).map((sound) => {
-    const right = random.pick(words.filter(({ word }) => word[0] === sound));
+    const right = random.pick(words.filter((entry) => entry.word[0] === sound && clear(entry)));
     // Nothing the player might call a wrong picture starts with a sound like this one.
     const wrong = words.filter((other) => names(other).every((name) => !alike(name[0], sound)));
     const choices = random.shuffle([right, ...random.shuffle(wrong).slice(0, level)]);

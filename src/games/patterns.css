@@ -53,7 +53,8 @@
 }
 
 .pat-card {
-  width: 76px;
+  width: 100%;
+  max-width: 76px; /* 4 cards share a phone's width */
 }
 
 @media (prefers-reduced-motion: reduce) {

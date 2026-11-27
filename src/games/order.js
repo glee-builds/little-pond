@@ -9,16 +9,18 @@
 
 import { createRandom } from '../seed.js';
 import { make, wiggle } from '../ui.js';
-import { duckling, draggable, playRounds } from '../scene.js';
+import { duckling, draggable } from '../scene.js';
 
 export const meta = {
-  title: 'Order', kind: 'numbers', levels: 3, css: true,
+  title: 'Order', kind: 'numbers', levels: 4, css: true,
   art: '<span class="art-ducks" style="align-items:flex-end"><img src="assets/duck.svg" alt="" style="width:18px"><img src="assets/duck.svg" alt="" style="width:29px"><img src="assets/duck.svg" alt="" style="width:42px"></span>',
 };
 
 export const ROUNDS = 4;
-// How many ducklings at each level. The top level also asks for biggest first.
-const COUNTS = [3, 4, 5];
+// How many ducklings at each level. From level 2, half the rounds ask for biggest first.
+// 6 is the most that fit a phone in one line at 56px each.
+const COUNTS = [4, 4, 5, 6];
+const DOWN = 2;
 
 /** The sizes in the order asked for. */
 const lineUp = ({ sizes, down }) => [...sizes].sort((a, b) => (down ? b - a : a - b));
@@ -36,7 +38,7 @@ export function generate(seed, level = 1) {
     let sizes;
     // Never the same mix twice in a row.
     do sizes = random.shuffle(all); while (!mixed(sizes) || same(sizes, rounds.at(-1)?.sizes ?? []));
-    rounds.push({ sizes, down: level >= 3 && random.next() < 0.5 });
+    rounds.push({ sizes, down: level >= DOWN && random.next() < 0.5 });
   }
   return { level, rounds };
 }
@@ -54,15 +56,16 @@ export function verify(puzzle) {
     const { sizes, down } = round;
     if (!same(lineUp({ sizes }), Array.from({ length: count }, (_, n) => n + 1))) say(`the sizes are not 1 to ${count}`);
     if (!mixed(sizes)) say('the ducklings start in order');
-    if (down && puzzle.level < 3) say('biggest first is for the top level');
+    if (down && puzzle.level < DOWN) say(`biggest first starts at level ${DOWN}`);
     if (!check(round, lineUp(round))) say('the right order is not accepted');
     if (check(round, sizes) || check(round, lineUp({ sizes, down: !down }))) say('a wrong order is accepted');
   });
   return { ok: problems.length === 0, problems };
 }
 
-export function render(container, puzzle, onDone, session) {
-  playRounds(container, puzzle, onDone, session, {
+/** What playRounds needs to play these rounds, for the mixed game this is part of (src/mix.js). */
+export function rules() {
+  return {
     prompt: ({ down }) => `Line them up from ${down ? 'biggest to smallest' : 'smallest to biggest'}.`,
     check,
     draw(stage, round, answer) {
@@ -101,8 +104,9 @@ export function render(container, puzzle, onDone, session) {
         const duck = spots[i].appendChild(duckling());
         duck.classList.add('ord-duck');
         duck.dataset.size = size;
-        // The smallest is drawn at 40% of its box, the biggest fills it.
-        duck.style.setProperty('--ord-width', `${40 + (60 * (size - 1)) / (count - 1)}%`);
+        // The smallest is drawn at 40% of its box (25% with 6, so sizes stay 8px apart), the biggest fills it.
+        const low = count > 5 ? 25 : 40;
+        duck.style.setProperty('--ord-width', `${low + ((100 - low) * (size - 1)) / (count - 1)}%`);
         // Tapping one duckling, then another, swaps them. (Without this the second tap would pick up the second one.)
         duck.addEventListener('click', (event) => {
           const held = stage.querySelector('.picked');
@@ -123,5 +127,5 @@ export function render(container, puzzle, onDone, session) {
         return round.down ? 'Biggest to smallest' : 'Smallest to biggest';
       };
     },
-  });
+  };
 }

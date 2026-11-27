@@ -1,21 +1,27 @@
 /* Order (src/games/order.js): a log with a row of spots, and ducklings waiting below. */
 
-/* Both rows have one box per duckling, so every box is the same size. */
+/* Both rows have one box per duckling, so every box is the same size. They
+   may reach 12px into the page's margins, so 6 fit a phone at 56px each. */
 .ord-log,
 .ord-tray {
   position: relative;
   align-self: center;
-  width: min(100%, var(--ord-count) * 108px);
+  width: min(100% + 24px, var(--ord-count) * 108px);
   display: grid;
   grid-template-columns: repeat(var(--ord-count), 1fr);
-  gap: 4px;
-  padding: 6px;
+  gap: 3px;
+  padding: 4px;
 }
 
 .ord-log {
   margin-bottom: 22px; /* room for the dots under it */
   border-radius: 22px;
   background: var(--bank);
+}
+
+/* The log reaches the screen's edge, so its check mark sits inside its corner. */
+.ord-log.right::after {
+  right: 4px;
 }
 
 .ord-slot,

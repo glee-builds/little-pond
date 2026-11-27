@@ -21,11 +21,10 @@ export const ENOUGH = 8;
 
 // ---------- The word list ----------
 
-// data/words.json: words with a picture each: { word, picture, also }.
-// Three-letter words (consonant, short vowel, consonant) are for Slide and
-// say whether all their sounds can be stretched (`stretchy`); longer ones
-// are only for Sounds. `also` lists other names a young player might give
-// the picture.
+// data/words.json: three-letter words (consonant, short vowel, consonant),
+// each with a picture: { word, picture, stretchy, also }. `stretchy` says
+// whether all its sounds can be stretched; `also` lists other names a young
+// player might give the picture.
 let words = null;
 export const loadWords = () => (words ??= fetch('data/words.json').then((response) => response.json())
   .catch((error) => { words = null; throw error; }));

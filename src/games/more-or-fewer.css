@@ -1,17 +1,33 @@
 /* More or Fewer (src/games/more-or-fewer.js): two lily pads to compare, or to make the same. */
 
-/* A lily pad with its ducklings in rows of 5 (styles.css). Always two rows
-   tall, so nothing jumps. */
+/* A lily pad with its ducklings in rows of 5 (styles.css). Both pads in a
+   round are the same number of rows tall (2 to 4), so nothing jumps. */
 .mof-pad {
   --duck: 58px;
+  --row: 54px;
+  --rows: 2;
   position: relative;
-  grid-auto-rows: 54px;
-  height: 138px;
+  grid-auto-rows: var(--row);
+  height: calc(var(--rows) * var(--row) + (var(--rows) - 1) * 4px + 26px);
   padding: 10px;
   border: 3px solid var(--pad-edge);
   border-radius: 28px;
   background: var(--pad);
   font: inherit;
+}
+
+/* Up to 15 and up to 20: smaller ducklings, so two pads (and the add and
+   check buttons) still fit an iPad upright. */
+.mof-rows-3 {
+  --rows: 3;
+  --duck: 46px;
+  --row: 43px;
+}
+
+.mof-rows-4 {
+  --rows: 4;
+  --duck: 44px;
+  --row: 41px;
 }
 
 button.mof-pad {

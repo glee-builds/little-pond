@@ -14,7 +14,7 @@ const rounds = (level, days = 60) => {
 
 test('every day for two years, at every level, each round can be answered', () => {
   everyDay((key) => {
-    for (const level of [1, 2, 3]) assertValid(verify(generate(seedFor(key, 'groups'), level)), `${key} level ${level}`);
+    for (const level of [1, 2, 3, 4]) assertValid(verify(generate(seedFor(key, 'groups'), level)), `${key} level ${level}`);
   });
 });
 
@@ -24,11 +24,13 @@ test('the same day and level give the same rounds', () => {
   assert.equal(generate(seed, 2).rounds.length, ROUNDS);
 });
 
-test('levels: 2 pads, 3 pads (at most 9 ducklings), then fair sharing (at most 10)', () => {
-  assert.ok(rounds(1).every(({ pads, each, fair }) => pads === 2 && each <= 3 && !fair));
-  assert.ok(rounds(2).every(({ pads, each, fair }) => pads === 3 && each <= 3 && !fair));
-  assert.ok(rounds(3).every(({ pads, each, fair }) => fair && pads * each <= 10));
-  assert.equal(Math.max(...rounds(3).map(({ pads, each }) => pads * each)), 10);
+test('levels: 3 pads of up to 4, more on each pad, then fair sharing of up to 12, then up to 20', () => {
+  const most = (level) => Math.max(...rounds(level).map(({ pads, each }) => pads * each));
+  assert.ok(rounds(1).every(({ pads, each, fair }) => pads === 3 && each <= 4 && !fair));
+  assert.ok(rounds(2).every(({ pads, each, fair }) => pads * each >= 12 && !fair));
+  assert.ok(rounds(3).every(({ fair }) => fair));
+  assert.ok(rounds(4).every(({ pads, fair }) => fair && pads <= 4));
+  assert.deepEqual([most(1), most(2), most(3), most(4)], [12, 16, 12, 20]);
 });
 
 test('only the same number on every pad is right', () => {

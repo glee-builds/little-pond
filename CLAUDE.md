@@ -14,15 +14,16 @@ Shared rules for all coding projects are in `../CLAUDE.md`, and they apply here.
 - **Repo:** public, named `little-pond`. Players see "Little Pond".
 - **Hosting:** GitHub Pages from the root of `main`. Installable to the home screen; works offline (`sw.js`).
 - **Data:** progress in `localStorage` under `little-pond.progress`. One player, no accounts.
-- **Testing:** Node's built-in test runner (`node --test`), one test file per game, checking every day for two years at every level. `node tests/screens.mjs` opens every screen in headless Chrome at phone size, plays each game, and checks it works offline; add a file for each new game to `tests/plays/`. GitHub Actions runs both on every pull request.
+- **Testing:** Node's built-in test runner (`node --test`), one test file per game, checking every day for two years at every level. `node tests/screens.mjs` opens every screen in headless Chrome at phone size, plays each game, checks that every round of every level fits, and checks it works offline; add a file for each new game to `tests/plays/`. GitHub Actions runs both on every pull request.
 - **Shared with Lily Pad:** files copied from `../kids-puzzles` and trimmed (seed, progress, stickers, voice, pond, rounds, the service worker). Two repos with no build step cannot share files, so a fix in one is copied to the other by hand.
 - **Game modules:** each game is one file in `src/games/` that exports `meta` (`{ title, kind, levels, css, art }`: its name, its group, how many levels, whether it has its own `.css` file beside it, and the picture on its card), `generate(seed, level)`, `check(round, answer)`, `verify(puzzle)` (which returns `{ ok, problems }`), and `render(container, puzzle, onDone, session)`. A game registers itself: add its name to `NAMES` in `src/games/index.js`, and its files to `FILES` in `sw.js`. Nothing in `src/app.js` changes.
+- **Mixed games:** most games are made by `src/mix.js` from two or three smaller games, their parts (How Many is `how-many.js` and `match-the-number.js`). A mixed game takes 2 rounds from each part and takes turns between them, so no two rounds in a row are the same kind. A part is a file in `src/games/` that is not in `NAMES`: it exports `meta`, `generate`, `check`, `verify`, and `rules()` (the `{ prompt, check, draw }` that `playRounds` needs) instead of `render`, and keeps its own test file and `tests/plays/` file. The mixed game's levels are the most any part has; a part with fewer stays at its top level.
 - **Styles:** `styles.css` holds the colors (variables at the top), the app's screens, and every piece `src/scene.js` makes. A game's own `.css` file holds only what that game alone needs, with its own short prefix (`grp-`, `hop-`, `mof-`), and is loaded when the game is first opened. Colors always come from the variables.
 - **Old iPads:** the app must run on Safari 15.4. Nothing newer in CSS or JavaScript without a fallback (`color-mix()` sits inside `@supports`, under "Soft colors" in `styles.css`).
 - **Character:** a duckling (`assets/duck.svg`), drawn for this app in the style of Lily Pad's frog. The app icon is the duckling on a lily pad at sunrise.
 - **Scene:** `src/scene.js` has the pieces games are made of: ducklings, tap-to-count, answer cards (`dotCards` for numbers, `pictureCards` for words; they can sleep until the player has counted or watched), the round check button, drag-or-tap (`draggable`), the bank of ducklings to move onto pads, and `playRounds`, which runs a game's rounds (the spoken line, the speaker button, the round dots, misses, and the player's place if the phone locks). A game describes each round as data and gives `playRounds` three things: `prompt`, `check`, and `draw`. A piece moves into `src/scene.js` (and its styles into `styles.css`) once two games use it.
 - **Sound games:** letter sounds are recorded on the grown-up page and kept in IndexedDB by `src/sounds.js`; the words and their pictures are in `data/words.json`. A game that needs them exports two more things: `data()`, which gives what `generate` needs after the seed and level (the word list and the recorded letters), and `available()`, which says whether enough is recorded to play. Until it is, the game stays out of today's set.
-- **Daily set:** `src/today.js` picks up to 4 games a day: 3 from Numbers and 1 from Sounds (all Numbers until a sound game exists). The 7 days before today can be played from the home screen (`?day=2026-11-20`).
+- **Daily set:** `src/today.js` picks up to 4 games a day: 3 of the 5 Numbers games and Slide, the one Sounds game (all Numbers until enough sounds are recorded for it). The 7 days before today can be played from the home screen (`?day=2026-11-20`).
 - **Levels:** each game has `levels` in its `meta`; up after 3 easy days in a row, down after 2 hard ones (`src/progress.js`). No level is shown to the player.
 - **Stickers:** the first finish of each game each day gives a gift (`src/stickers.js`, the same book as Lily Pad).
 - **Grown-up page:** opened by holding its button for 2 seconds.
@@ -49,12 +50,13 @@ index.html          home screen: the pond, today's games, and the end-of-game ca
 styles.css
 sw.js               service worker: offline play, newest files when online
 assets/             the duckling, the icon, the Andika font
-data/words.json     the sound games' words and pictures
+data/words.json     Slide's three-letter words and pictures
 src/app.js          screens, starting games, stickers, the grown-up page
 src/scene.js        the pieces games are made of: ducklings, answer cards,
                     tap-to-count, drag-or-tap, the bank, playRounds
-src/games/          one .js file per game, with its .css beside it
-src/games/index.js  the list of games
+src/games/          one .js file per game or part, with its .css beside it
+src/games/index.js  the list of games (the 6 in NAMES)
+src/mix.js          makes one game from the rounds of its parts
 src/sounds.js       recording and playing letter sounds; the word list
 src/sounds.css      the "Record sounds" part of the grown-up page
 src/today.js        which games make up today's set

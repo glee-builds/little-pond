@@ -1,5 +1,5 @@
 // How tests/screens.mjs plays Join (see tests/plays/how-many.mjs for what
-// each piece is). G.round.whole means a splitting round (level 3): its
+// each piece is). G.round.whole means a splitting round (level 2): its
 // ducklings are moved the tap-tap way: tap one, tap a pad.
 
 export const ready = `Boolean(G.querySelector('.long-pad'))`;

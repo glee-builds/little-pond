@@ -7,10 +7,10 @@
 
 import { createRandom } from '../seed.js';
 import { make } from '../ui.js';
-import { duckling, draggable, playRounds } from '../scene.js';
+import { duckling, draggable } from '../scene.js';
 
 export const meta = {
-  title: 'Sort', kind: 'numbers', levels: 3, css: true,
+  title: 'Sort', kind: 'numbers', levels: 4, css: true,
   art: '<span class="art-ducks" style="align-items:center;font-size:28px;line-height:1"><img src="assets/duck.svg" alt="">🐟🐸</span>',
 };
 
@@ -21,9 +21,10 @@ const EMOJI = { fish: '🐟', frog: '🐸', bug: '🐞' };
 const ANIMALS = ['duck', 'fish', 'frog', 'bug'];
 // Each level: the kinds its pads are picked from, how many pads, and the fewest and most things.
 const LEVELS = [
-  { kinds: ['big', 'small'], pads: 2, things: [4, 5] },
-  { kinds: ANIMALS, pads: 2, things: [5, 6] },
-  { kinds: ANIMALS, pads: 3, things: [6, 6] },
+  { kinds: ANIMALS, pads: 2, things: [6, 7] },
+  { kinds: ANIMALS, pads: 3, things: [7, 9] },
+  { kinds: ANIMALS, pads: 4, things: [8, 10] },
+  { kinds: ANIMALS, pads: 4, things: [11, 12] },
 ];
 
 /** The day's rounds: each is { pads, things }, both lists of kinds; a thing belongs on the pad of its kind. */
@@ -70,8 +71,9 @@ function picture(kind) {
   return node;
 }
 
-export function render(container, puzzle, onDone, session) {
-  playRounds(container, puzzle, onDone, session, {
+/** What playRounds needs to play these rounds, for the mixed game this is part of (src/mix.js). */
+export function rules() {
+  return {
     prompt: () => 'Put each one on its pad.',
     check,
     draw(stage, round, answer) {
@@ -111,5 +113,5 @@ export function render(container, puzzle, onDone, session) {
         return 'Every one is on its pad';
       };
     },
-  });
+  };
 }

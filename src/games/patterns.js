@@ -1,13 +1,13 @@
 // patterns.js: Patterns.
 //
-// A row of pond things repeats (duckling, flower, duckling, flower, ...) and
-// ends with an empty slot. The player taps the picture card that comes next,
-// and it hops into the slot. It builds seeing a repeating pattern and
-// carrying it on.
+// A row of pond things repeats (duckling, flower, duckling, flower, ...) with
+// an empty slot: at the end, or at the top levels anywhere in the row. The
+// player taps the picture card that belongs there, and it hops into the slot.
+// It builds seeing a repeating pattern and carrying it on.
 
 import { createRandom } from '../seed.js';
 import { make } from '../ui.js';
-import { answerCards, playRounds } from '../scene.js';
+import { answerCards } from '../scene.js';
 
 const svg = (inside) => `<svg viewBox="0 0 100 100" aria-hidden="true">${inside}</svg>`;
 
@@ -34,32 +34,37 @@ const PICTURES = {
 const THINGS = Object.keys(PICTURES);
 
 export const meta = {
-  title: 'Patterns', kind: 'numbers', levels: 3, css: true,
+  title: 'Patterns', kind: 'numbers', levels: 4, css: true,
   art: `<span class="art-ducks">${[PICTURES.duckling, PICTURES.flower, PICTURES.duckling].join('')}</span>`
     .replaceAll('<svg ', '<svg width="34" height="34" '),
 };
 
 export const ROUNDS = 4;
-// The part that repeats at each level: two kinds, two kinds unevenly, three kinds.
-const UNITS = [['AB'], ['AAB', 'ABB'], ['ABC']];
-const CHOICES = [2, 3, 3];
+// At each level: the parts that repeat, how many cards, and whether the gap can be anywhere (not only at the end).
+const LEVELS = [
+  { units: ['AAB', 'ABB', 'ABC'], cards: 3, inside: false },
+  { units: ['AABB', 'ABAC', 'ABCC', 'AABC'], cards: 4, inside: false },
+  { units: ['AABB', 'ABAC', 'ABCC', 'AABC'], cards: 4, inside: true },
+  { units: ['ABCD', 'ABCB', 'ABBC', 'ABAC'], cards: 4, inside: true },
+];
 
-/** The day's rounds: each is { row, answer, choices }, all names of pond things. */
+/** The day's rounds: each is { row, gap, answer, choices }; the slot goes at place `gap` in the row. */
 export function generate(seed, level = 1) {
   const random = createRandom(seed);
-  const units = UNITS[level - 1] ?? UNITS.at(-1);
+  const { units, cards, inside } = LEVELS[level - 1] ?? LEVELS.at(-1);
   const rounds = [];
   for (let i = 0; i < ROUNDS; i++) {
     const unit = random.pick(units);
     const kinds = random.shuffle(THINGS);
-    const at = (place) => kinds['ABC'.indexOf(unit[place % unit.length])];
-    // Two full repeats, and sometimes one thing more, so the gap isn't always at the same place.
-    const length = unit.length * 2 + random.int(0, 1);
+    // Two full repeats and the slot, and sometimes one thing more, so the gap isn't always at the same place.
+    const all = Array.from({ length: unit.length * 2 + 1 + random.int(0, 1) }, (_, place) => kinds['ABCD'.indexOf(unit[place % unit.length])]);
+    const gap = inside ? random.int(0, all.length - 1) : all.length - 1;
     rounds.push({
-      row: Array.from({ length }, (_, place) => at(place)),
-      answer: at(length),
-      // Level 2 has one card that isn't in the pattern at all.
-      choices: random.shuffle(kinds.slice(0, CHOICES[level - 1] ?? 3)),
+      row: all.filter((_, place) => place !== gap),
+      gap,
+      answer: all[gap],
+      // Cards not in the pattern fill up to the level's number of cards.
+      choices: random.shuffle(kinds.slice(0, cards)),
     });
   }
   return { level, rounds };
@@ -73,21 +78,27 @@ function period(row) {
   return 0;
 }
 
-/** Confirm every round shows its pattern twice over and has exactly one card that carries it on. */
+/** The repeating part as letters, A for the first kind seen, B for the next: "AAB". */
+const lettersOf = (things) => things.map((kind) => 'ABCD'[[...new Set(things)].indexOf(kind)]).join('');
+
+/** Confirm every round shows its pattern twice over and has exactly one card that fits the gap. */
 export function verify(puzzle) {
   const problems = [];
-  const unit = UNITS[puzzle.level - 1]?.[0].length;
+  const { units = [], cards, inside } = LEVELS[puzzle.level - 1] ?? {};
   if (puzzle.rounds.length !== ROUNDS) problems.push(`${puzzle.rounds.length} rounds, not ${ROUNDS}`);
-  puzzle.rounds.forEach(({ row, answer, choices }, i) => {
+  puzzle.rounds.forEach(({ row, gap, answer, choices }, i) => {
     const say = (problem) => problems.push(`round ${i + 1}: ${problem}`);
-    const p = period(row);
-    if (p !== unit) say(`repeats every ${p} things, not every ${unit}`);
-    if (row.length < p * 2) say('fewer than two full repeats are shown');
-    if (row.length > 7) say(`${row.length} things is too many to show`);
-    if (new Set(row).size !== new Set(UNITS[puzzle.level - 1]?.[0]).size) say('the wrong number of kinds');
-    if (answer !== row[row.length - p]) say(`${answer} does not carry the pattern on`);
-    if (new Set(choices).size !== CHOICES[puzzle.level - 1] || choices.length !== new Set(choices).size) say('the wrong number of different cards');
-    if (!choices.includes(answer)) say('no right card');
+    const filled = (kind) => [...row.slice(0, gap), kind, ...row.slice(gap)];
+    const all = filled(answer);
+    const p = period(all);
+    if (!units.includes(lettersOf(all.slice(0, p)))) say(`repeats ${lettersOf(all.slice(0, p))}, not a pattern at this level`);
+    if (all.length < p * 2 + 1) say('fewer than two full repeats are shown');
+    if (all.length > 10) say(`${all.length} things is too many to show`);
+    if (!inside && gap !== row.length) say('the gap is not at the end');
+    // A card fits if the row, with it in the gap, repeats at least twice over.
+    const fits = choices.filter((kind) => { const q = period(filled(kind)); return q > 0 && q * 2 <= all.length; });
+    if (fits.length !== 1 || fits[0] !== answer) say(`${fits.length} cards fit the gap`);
+    if (choices.length !== cards || new Set(choices).size !== cards) say('the wrong number of different cards');
     if ([...row, ...choices].some((kind) => !THINGS.includes(kind))) say('a thing that is not in the pond');
   });
   return { ok: problems.length === 0, problems };
@@ -100,9 +111,10 @@ function picture(kind, className) {
   return node;
 }
 
-export function render(container, puzzle, onDone, session) {
-  playRounds(container, puzzle, onDone, session, {
-    prompt: () => 'What comes next?',
+/** What playRounds needs to play these rounds, for the mixed game this is part of (src/mix.js). */
+export function rules() {
+  return {
+    prompt: (round) => (round.gap === round.row.length ? 'What comes next?' : 'What goes in the gap?'),
     check,
     draw(stage, round, answer) {
       const row = make('div', 'pat-row');
@@ -110,15 +122,16 @@ export function render(container, puzzle, onDone, session) {
       // Up to 5 fit in one line; more wrap onto two even lines, read left to right.
       row.style.setProperty('--columns', cells <= 5 ? cells : Math.ceil(cells / 2));
       for (const kind of round.row) row.append(picture(kind, 'pat-thing'));
-      const slot = row.appendChild(make('span', 'pat-thing pat-slot', '?'));
+      const slot = make('span', 'pat-thing pat-slot', '?');
+      row.insertBefore(slot, row.children[round.gap] ?? null);
       const cards = answerCards(round.choices, (card, kind) => card.append(picture(kind, 'pat-card')), answer);
       stage.append(row, cards.node);
       return () => {
         cards.markRight(round.answer);
         slot.replaceChildren(picture(round.answer, 'pat-hop'));
         slot.classList.add('pat-filled');
-        return `A ${round.answer} comes next`;
+        return round.gap === round.row.length ? `A ${round.answer} comes next` : `A ${round.answer} goes in the gap`;
       };
     },
-  });
+  };
 }

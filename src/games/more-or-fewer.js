@@ -8,20 +8,21 @@
 
 import { createRandom } from '../seed.js';
 import { make, button, plural, range } from '../ui.js';
-import { duckling, ducklings, checkButton, playRounds } from '../scene.js';
+import { duckling, ducklings, checkButton } from '../scene.js';
 
 export const meta = {
-  title: 'More or Fewer', kind: 'numbers', levels: 3, css: true,
+  title: 'More or Fewer', kind: 'numbers', levels: 4, css: true,
   art: '<span class="art-ducks"><img src="assets/duck.svg" alt=""><img src="assets/duck.svg" alt=""><img src="assets/duck.svg" alt=""><img src="assets/duck.svg" alt="" style="margin-left:16px"></span>',
 };
 
 export const ROUNDS = 4;
-const MOST = 10; // a pad never holds more than this
+const SAME_MOST = 15; // the most on a "make the same" pad, which is always 3 rows tall
 // Each level: the most ducklings on a pad, and how far apart the two pads may be.
 const LEVELS = [
-  { most: 6, apart: (gap) => gap >= 2 },
+  { most: 10, apart: (gap) => gap >= 2 },
   { most: 10, apart: (gap) => gap === 1 },
-  { most: MOST, apart: (gap) => gap >= 1 && gap <= 3 },
+  { most: 20, apart: (gap) => gap >= 1 && gap <= 3 },
+  { most: SAME_MOST, apart: (gap) => gap >= 1 && gap <= 3 },
 ];
 const TOP = LEVELS.length; // the level where the player makes the pads the same
 
@@ -64,8 +65,8 @@ export function verify(puzzle) {
     if ((ask === 'same') !== top || !['more', 'fewer', 'same'].includes(ask)) say(`"${ask}" does not belong at level ${puzzle.level}`);
     if (pads.length !== 2 || pads.some((count) => !(count >= 1 && count <= most))) say(`a pad is outside 1 to ${most}`);
     if (!apart(Math.abs(pads[0] - pads[1]))) say(`${pads[0]} and ${pads[1]} are the wrong distance apart`);
-    // 'same' can always be reached, because both pads are within 0 to MOST.
-    const answers = ask === 'same' ? range(0, MOST) : [0, 1];
+    // 'same' can always be reached, because both pads are within 0 to SAME_MOST.
+    const answers = ask === 'same' ? range(0, SAME_MOST) : [0, 1];
     if (answers.filter((answer) => check(round, answer)).length !== 1) say('not exactly one right answer');
     if (ask === 'same' && check(round, pads[1])) say('the pads start the same');
   });
@@ -76,8 +77,10 @@ const LINES = { more: 'Which pad has more?', fewer: 'Which pad has fewer?', same
 
 /** Tap a pad: the round where one pad has more. */
 function drawChoice(stage, round, answer) {
+  // Both pads are as tall as the bigger one needs (2 to 4 rows), so they match.
+  const rows = Math.max(2, Math.ceil(Math.max(...round.pads) / 5));
   const pads = round.pads.map((count, i) => {
-    const pad = button('rows-of-5 mof-pad', '', () => answer(i, pad));
+    const pad = button(`rows-of-5 mof-pad mof-rows-${rows}`, '', () => answer(i, pad));
     pad.setAttribute('aria-label', plural(count, 'duckling'));
     ducklings(count, pad);
     return pad;
@@ -94,11 +97,11 @@ function drawChoice(stage, round, answer) {
 function drawSame(stage, round, answer) {
   const [goal, start] = round.pads;
   let over = false;
-  const fixed = make('div', 'rows-of-5 mof-pad');
-  const mine = make('div', 'rows-of-5 mof-pad mof-mine');
+  const fixed = make('div', 'rows-of-5 mof-pad mof-rows-3');
+  const mine = make('div', 'rows-of-5 mof-pad mof-rows-3 mof-mine');
   const held = () => mine.querySelectorAll('.duckling').length;
   const add = () => {
-    if (over || held() >= MOST) return;
+    if (over || held() >= SAME_MOST) return;
     const duck = mine.appendChild(duckling());
     duck.addEventListener('click', () => over || duck.remove());
   };
@@ -122,10 +125,11 @@ function drawSame(stage, round, answer) {
   };
 }
 
-export function render(container, puzzle, onDone, session) {
-  playRounds(container, puzzle, onDone, session, {
+/** What playRounds needs to play these rounds, for the mixed game this is part of (src/mix.js). */
+export function rules() {
+  return {
     prompt: (round) => LINES[round.ask],
     check,
     draw: (stage, round, answer) => (round.ask === 'same' ? drawSame : drawChoice)(stage, round, answer),
-  });
+  };
 }

@@ -43,10 +43,7 @@
   line-height: 1;
 }
 
-.sort-big { --sort-size: 88px; }
-.sort-small { --sort-size: 56px; }
-
-/* On a pad, things are smaller so a whole group fits; big stays bigger than small. */
+/* On a pad, things are smaller so a whole group fits. */
 .sort-pad .sort-thing {
   --sort-scale: 0.6;
   cursor: default;

@@ -1,20 +1,51 @@
 /* Groups (src/games/groups.js): ducklings on the bank, lily pads to put them on. */
 
-/* The pads, on the water. */
+/* The pads, on the water. A little tighter than elsewhere, so 4 pads fit a phone. */
 .grp-pads {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 8px;
+  gap: 6px;
+  padding: 6px;
   border-radius: 28px;
   background: var(--water);
 }
 
-/* More than 5 on one pad (never a right answer): they squeeze up in one row, so the pad doesn't grow. */
-.grp-pads .long-pad:has(.duckling:nth-child(6)) {
-  flex-wrap: nowrap;
+/* Never more than 5 across (room for 5 ducklings of 56px and their gaps), so groups are easy to compare. */
+.grp-pads .long-pad {
+  min-height: 64px;
+  padding: 4px max(6px, (100% - 296px) / 2);
 }
 
-.grp-pads .long-pad:has(.duckling:nth-child(6)) .duckling + .duckling {
-  margin-left: -32px;
+/* Room for two rows of 5 on each pad. */
+.grp-tall .long-pad {
+  min-height: 124px;
+}
+
+/* A crowd: ducklings squeezed into one row, each tucked behind the next, so
+   any number fits. The bank is one when a round has more than 10 or 4 pads (any
+   duckling in it is as good as another), and a pad becomes one when it has
+   more than it has room for (never a right answer), so it doesn't grow. */
+.bank.grp-crowd,
+.grp-pads:not(.grp-tall) .long-pad:has(.duckling:nth-child(6)),
+.grp-tall .long-pad:has(.duckling:nth-child(11)) {
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  padding-right: 52px; /* the last one's picture sticks out past its squeezed box */
+}
+
+.bank.grp-crowd {
+  min-height: 72px;
+}
+
+.bank.grp-crowd .duckling,
+.grp-pads:not(.grp-tall) .long-pad:has(.duckling:nth-child(6)) .duckling,
+.grp-tall .long-pad:has(.duckling:nth-child(11)) .duckling {
+  flex: 0 1 56px;
+  min-width: 0;
+}
+
+.grp-crowd .duckling img,
+.grp-pads .long-pad .duckling img {
+  width: 56px;
+  max-width: none;
 }

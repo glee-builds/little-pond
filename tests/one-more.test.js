@@ -24,12 +24,12 @@ test('the same day and level give the same rounds', () => {
   assert.equal(generate(seed, 2).rounds.length, ROUNDS);
 });
 
-test('level 1 is one more only; levels 2 and 3 mix; nothing is below 1 or above 5, 5, and 10', () => {
+test('every level mixes one more and one less; the cards run 1 to 10, 5 to 15, and 10 to 20', () => {
   const steps = (level) => [...new Set(rounds(level).map(({ step }) => step))].sort().join();
   const shown = (level) => rounds(level).flatMap(({ choices }) => choices);
-  assert.deepEqual([steps(1), steps(2), steps(3)], ['1', '-1,1', '-1,1']);
-  for (const [level, most] of [[1, 5], [2, 5], [3, 10]]) {
-    assert.equal(Math.min(...shown(level)), 1);
+  assert.deepEqual([steps(1), steps(2), steps(3)], ['-1,1', '-1,1', '-1,1']);
+  for (const [level, fewest, most] of [[1, 1, 10], [2, 5, 15], [3, 10, 20]]) {
+    assert.equal(Math.min(...shown(level)), fewest);
     assert.equal(Math.max(...shown(level)), most);
   }
 });
@@ -42,12 +42,12 @@ test('one more is the next number, one less the one before', () => {
   }
 });
 
-test('verify catches choices that are not the three neighbours, and one less at level 1', () => {
+test('verify catches choices that are not the three neighbours, and a step of 2', () => {
   const seed = seedFor('2026-11-26', 'one-more');
   const spread = generate(seed, 1);
   spread.rounds[0].choices[0] += 5;
   assert.equal(verify(spread).ok, false);
-  const less = generate(seed, 1);
-  less.rounds[0].step = -1;
-  assert.equal(verify(less).ok, false);
+  const two = generate(seed, 1);
+  two.rounds[0].step = 2;
+  assert.equal(verify(two).ok, false);
 });

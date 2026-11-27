@@ -24,12 +24,14 @@ test('the same day and level give the same rounds', () => {
   assert.equal(generate(seed, 2).rounds.length, ROUNDS);
 });
 
-test('levels start with up to 5, 10, and 10; only level 3 can leave none, and at least 3 hop away there', () => {
+test('levels start with up to 10, 15, and 20; level 1 always leaves one, and 3 to 10 hop away at level 3', () => {
   const most = (level) => Math.max(...rounds(level).map(({ start }) => start));
   const fewestLeft = (level) => Math.min(...rounds(level).map(({ start, away }) => start - away));
-  assert.deepEqual([most(1), most(2), most(3)], [5, 10, 10]);
-  assert.deepEqual([fewestLeft(1), fewestLeft(2), fewestLeft(3)], [1, 1, 0]);
-  assert.equal(Math.min(...rounds(3).map(({ away }) => away)), 3);
+  const away = rounds(3).map((round) => round.away);
+  assert.deepEqual([most(1), most(2), most(3)], [10, 15, 20]);
+  assert.deepEqual([fewestLeft(1), fewestLeft(2), fewestLeft(3)], [1, 0, 0]);
+  assert.deepEqual([Math.min(...away), Math.max(...away)], [3, 10]);
+  assert.equal(Math.min(...rounds(3).map(({ start }) => start)), 10);
 });
 
 test('only the card for how many are left is right', () => {

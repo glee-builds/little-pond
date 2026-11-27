@@ -46,7 +46,8 @@ const GROUPS = [
 //   kind     which group it's in (see GROUPS)
 //   levels   how many levels it has
 //   art      the little picture on its card
-//   css      true if it has its own styles (src/games/<name>.css)
+//   css      true if it has its own styles (src/games/<name>.css), or for a
+//            mixed game (src/mix.js) the names of its parts that have styles
 // A game whose file can't be loaded is left out, with a warning.
 const GAMES = {};
 const loaded = await Promise.allSettled(NAMES.map((name) => import(`./games/${name}.js`)));
@@ -429,7 +430,8 @@ async function startGame(name) {
   }
   try {
     const game = GAMES[name];
-    if (game.meta.css) await loadStyles(name);
+    // `css` is true for a game's own styles, or a list of the parts' styles for a mixed game (src/mix.js).
+    await Promise.all((game.meta.css === true ? [name] : game.meta.css || []).map(loadStyles));
     // A game may export async data(): a list of more things generate needs
     // (the sound games' word list and recorded letters), so generate stays pure.
     const puzzle = game.generate(seedFor(playDay, name), levelFor(name), ...(await game.data?.() ?? []));
